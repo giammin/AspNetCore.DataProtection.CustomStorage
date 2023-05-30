@@ -6,10 +6,20 @@ using Microsoft.Extensions.Logging;
 
 namespace AspNetCore.DataProtection;
 
-public class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataProtectionStorage
+/// <summary>
+/// handle retrieving and store the keys for the DataProtection with a generic storage
+/// </summary>
+/// <typeparam name="TStorage"></typeparam>
+internal class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataProtectionStorage
 {
     private readonly IServiceProvider _services;
     private readonly ILogger _logger;
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="loggerFactory"></param>
+    /// <exception cref="ArgumentNullException"></exception>
     public StorageWrapper(IServiceProvider services, ILoggerFactory loggerFactory)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
