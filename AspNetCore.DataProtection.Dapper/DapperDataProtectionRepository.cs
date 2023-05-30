@@ -11,9 +11,10 @@ public class DapperDataProtectionRepository: IDbDataProtectionStorage
     private readonly DapperDataProtectionConfig _config;
 
     /// <summary>
-    /// 
+    /// create an instance of <see cref="DapperDataProtectionRepository"/>
     /// </summary>
-    /// <param name="connection"></param>
+    /// <param name="connection">the db connection</param>
+    /// <param name="options">repository configuration</param>
     public DapperDataProtectionRepository(IDbConnection connection, IOptionsSnapshot<DapperDataProtectionConfig> options)
     {
         _connection = connection;
@@ -23,6 +24,10 @@ public class DapperDataProtectionRepository: IDbDataProtectionStorage
     /// <inheritdoc />
     IEnumerable<DataProtectionKey> IDataProtectionStorage.GetAll() => GetAll();
 
+    /// <summary>
+    /// return all the <see cref="DataProtectionKeyEntity"/> saved
+    /// </summary>
+    /// <returns></returns>
     public IEnumerable<DataProtectionKeyEntity> GetAll() => _connection.Query<DataProtectionKeyEntity>($"select * from [{_config.SchemaName}].[{_config.TableName}]");
 
     /// <inheritdoc />

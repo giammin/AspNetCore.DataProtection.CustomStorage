@@ -5,10 +5,8 @@ using Microsoft.Extensions.Options;
 
 namespace AspNetCore.DataProtection.Dapper;
 
-
-
 /// <summary>
-/// Extension method class for configuring <see cref="DataProtectionRepository"/> as <see cref="IDataProtectionStorage"/>
+/// Extension method class for configuring <see cref="DapperDataProtectionRepository"/> as <see cref="IDataProtectionStorage"/>
 /// </summary>
 public static class DapperDataProtectionExtensions
 {
@@ -16,6 +14,7 @@ public static class DapperDataProtectionExtensions
     /// Configures the data protection system to persist keys to a custom storage
     /// </summary>
     /// <param name="builder">The <see cref="IDataProtectionBuilder"/> instance to modify.</param>
+    /// <param name="configAction"></param>
     /// <returns>The value <paramref name="builder"/>.</returns>
     public static IDataProtectionBuilder PersistKeysWithDapper(this IDataProtectionBuilder builder, Action<DapperDataProtectionConfig>? configAction=null)
     {
