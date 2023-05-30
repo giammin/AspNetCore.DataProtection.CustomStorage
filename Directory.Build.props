@@ -10,7 +10,6 @@
 		<DebugType>embedded</DebugType>
 		<!--<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>-->
 
-
 		<VersionPrefix_DataProtection>0.9</VersionPrefix_DataProtection>
 		<VersionPrefix_DataProtection_Dapper>0.9</VersionPrefix_DataProtection_Dapper>
 		<VersionPrefix>0.1</VersionPrefix> 
@@ -43,11 +42,8 @@
 		<!--<ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">True</ContinuousIntegrationBuild>-->
 	</PropertyGroup>
 
-	<!--<ItemGroup>
-		<Content Include="..\Readme.md">
-			<Pack>true</Pack>
-			<PackagePath>Readme.md</PackagePath>
-		</Content>
-	</ItemGroup>-->
+	<ItemGroup>
+		<None Condition="Exists('$(ProjectDir)README.md')==false" Include="..\README.md" Pack="true" PackagePath="\"/>
+	</ItemGroup>
 </Project>
 
