@@ -1,0 +1,53 @@
+<Project>
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<TreatWarningsAsErrors Condition=" '$(Configuration)' == 'Release' ">true</TreatWarningsAsErrors>
+		<Nullable>enable</Nullable>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<Deterministic>true</Deterministic>
+		<DebugType>embedded</DebugType>
+		<!--<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>-->
+
+
+		<VersionPrefix_DataProtection>0.9</VersionPrefix_DataProtection>
+		<VersionPrefix_DataProtection_Dapper>0.9</VersionPrefix_DataProtection_Dapper>
+		<VersionPrefix>0.1</VersionPrefix> 
+		<versionBuild>0</versionBuild>
+		<versionRevision>0</versionRevision>
+		<buildNumber>$([System.DateTime]::Now.ToString(yyMM)).$([System.DateTime]::Now.ToString(dd))</buildNumber>
+		<FileVersion>$(VersionPrefix).$(buildNumber)$(versionBuild)$(versionRevision)</FileVersion>
+		<AssemblyVersion>$(VersionPrefix).$(versionBuild).$(versionRevision)</AssemblyVersion>
+		<PackageVersion>$(VersionPrefix).0</PackageVersion>
+		<Version>$(PackageVersion)</Version>
+
+		<!--<PackageId></PackageId>
+		<PackageIcon></PackageIcon>-->
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<PackageReadmeFile Condition="Exists('$(ProjectDir)README.md')">README.md</PackageReadmeFile>
+		<GeneratePackageOnBuild Condition=" '$(Configuration)' == 'Release' ">true</GeneratePackageOnBuild>
+		<PackageProjectUrl>https://github.com/giammin/AspNetCore.DataProtection</PackageProjectUrl>
+		<PackageOutputPath>build</PackageOutputPath>
+		<IncludeSource>true</IncludeSource>
+		<IncludeSymbols>true</IncludeSymbols>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+		<!--<PackageReleaseNotes></PackageReleaseNotes>-->
+
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<RepositoryUrl>https://github.com/giammin/AspNetCore.DataProtection</RepositoryUrl>
+		<Authors>giammin</Authors>
+		<Company></Company>
+
+		<!--<ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">True</ContinuousIntegrationBuild>-->
+	</PropertyGroup>
+
+	<!--<ItemGroup>
+		<Content Include="..\Readme.md">
+			<Pack>true</Pack>
+			<PackagePath>Readme.md</PackagePath>
+		</Content>
+	</ItemGroup>-->
+</Project>
+

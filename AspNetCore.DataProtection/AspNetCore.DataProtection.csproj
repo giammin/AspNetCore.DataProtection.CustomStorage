@@ -1,13 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<VersionPrefix>${VersionPrefix_DataProtection}</VersionPrefix>
 		<PackageTags>aspnetcore;dataprotection;storage</PackageTags>
 		<Description>Support for storing AspNetCore data protection keys using a custom storage.</Description>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<LangVersion>latest</LangVersion>
 	</PropertyGroup>
 
   <ItemGroup>
