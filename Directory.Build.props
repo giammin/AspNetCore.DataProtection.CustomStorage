@@ -1,5 +1,11 @@
 <Project>
+	<PropertyGroup Label="Package Versions">
+		<VersionPrefixDataProtection>0.9</VersionPrefixDataProtection>
+		<VersionPrefixDataProtectionDapper>0.9</VersionPrefixDataProtectionDapper>
+	</PropertyGroup>
 	<PropertyGroup>
+		<VersionPrefix Condition=" '$(VersionPrefix)' == '' ">0.1</VersionPrefix>
+		
 		<TargetFramework>net7.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
@@ -8,18 +14,8 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<Deterministic>true</Deterministic>
 		<DebugType>embedded</DebugType>
+		<TreatWarningsAsErrors Condition=" '$(Configuration)' == 'Release' ">true</TreatWarningsAsErrors>
 		<!--<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>-->
-
-		<VersionPrefix_DataProtection>0.9</VersionPrefix_DataProtection>
-		<VersionPrefix_DataProtection_Dapper>0.9</VersionPrefix_DataProtection_Dapper>
-		<VersionPrefix>0.2</VersionPrefix> 
-		<versionBuild>0</versionBuild>
-		<versionRevision>0</versionRevision>
-		<buildNumber>$([System.DateTime]::Now.ToString(yyMM)).$([System.DateTime]::Now.ToString(dd))</buildNumber>
-		<FileVersion>$(VersionPrefix).$(buildNumber)$(versionBuild)$(versionRevision)</FileVersion>
-		<AssemblyVersion>$(VersionPrefix).$(versionBuild).$(versionRevision)</AssemblyVersion>
-		<PackageVersion>$(VersionPrefix).0</PackageVersion>
-		<Version>$(PackageVersion)</Version>
 
 		<!--<PackageId>AspNetCore.DataProtection.CustomStorage</PackageId>
 		<PackageIcon></PackageIcon>-->
@@ -31,6 +27,7 @@
 		<IncludeSource>true</IncludeSource>
 		<IncludeSymbols>true</IncludeSymbols>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+		<PackageTags>aspnetcore;dataprotection;storage</PackageTags>
 		<!--<PackageReleaseNotes></PackageReleaseNotes>-->
 
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
