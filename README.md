@@ -2,14 +2,14 @@
 [![Create Release](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/actions/workflows/github-release.yml/badge.svg)](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/actions/workflows/github-release.yml)
 [![Publish Nuget package](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/actions/workflows/nuget-publish.yml/badge.svg)](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/actions/workflows/nuget-publish.yml)
 
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/giammin/AspNetCore.DataProtection.CustomStorage)
-![Nuget](https://img.shields.io/nuget/v/AspNetCore.DataProtection.CustomStorage)
-![Nuget](https://img.shields.io/nuget/v/AspNetCore.DataProtection.CustomStorage.Dapper)
+[![GitHub release](https://img.shields.io/github/v/release/giammin/AspNetCore.DataProtection.CustomStorage)](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/releases)
+[![AspNetCore.DataProtection.CustomStorage](https://img.shields.io/nuget/v/AspNetCore.DataProtection.CustomStorage)](https://www.nuget.org/packages/AspNetCore.DataProtection.CustomStorage/)
+[![AspNetCore.DataProtection.CustomStorage.Dapper](https://img.shields.io/nuget/v/AspNetCore.DataProtection.CustomStorage.Dapper)](https://www.nuget.org/packages/AspNetCore.DataProtection.CustomStorage.Dapper/)
 
-![GitHub issues](https://img.shields.io/github/issues/giammin/AspNetCore.DataProtection.CustomStorage)
-![GitHub pull requests](https://img.shields.io/github/issues-pr-raw/giammin/AspNetCore.DataProtection.CustomStorage)
+[![GitHub issues](https://img.shields.io/github/issues/giammin/AspNetCore.DataProtection.CustomStorage)](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr-raw/giammin/AspNetCore.DataProtection.CustomStorage)](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/pulls)
 
-![GitHub](https://img.shields.io/github/license/giammin/AspNetCore.DataProtection.CustomStorage)
+[![GitHub](https://img.shields.io/github/license/giammin/AspNetCore.DataProtection.CustomStorage)](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/blob/main/LICENSE)
 
 # AspNetCore.DataProtection.CustomStorage
 Support for storing ASP.NET Core Data Protection keys using a custom storage
