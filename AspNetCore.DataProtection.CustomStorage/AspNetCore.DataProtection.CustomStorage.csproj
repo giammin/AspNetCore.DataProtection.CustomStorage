@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<PackageId>AspNetCore.DataProtection.CustomStorage</PackageId>
+		<!--<PackageId>AspNetCore.DataProtection.CustomStorage</PackageId>-->
 		<VersionPrefix>${VersionPrefix_DataProtection}</VersionPrefix>
 		<PackageTags>aspnetcore;dataprotection;storage</PackageTags>
 		<Description>Support for storing AspNetCore data protection keys using a custom storage.</Description>
