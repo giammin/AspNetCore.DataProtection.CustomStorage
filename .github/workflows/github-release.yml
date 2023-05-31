@@ -3,17 +3,16 @@ on:
     tags:
       - 'v*'
 
-name: Create Release
+name: Create Github Release
 
 jobs:
   build:
     name: Create Release
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
       - name: Create Release
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
           prerelease: false
