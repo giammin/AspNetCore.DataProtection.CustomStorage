@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
+<PropertyGroup>
+	<VersionPrefix>$(VersionPrefixDataProtectionDapper)</VersionPrefix>
 	<PackageTags>${PackageTags};dapper</PackageTags>
 	<Description>Support for storing AspNetCore data protection keys using Dapper.</Description>
   </PropertyGroup>
