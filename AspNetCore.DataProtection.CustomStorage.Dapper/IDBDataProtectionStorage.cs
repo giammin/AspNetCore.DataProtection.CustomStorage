@@ -1,4 +1,4 @@
-﻿namespace AspNetCore.DataProtection.Dapper;
+﻿namespace AspNetCore.DataProtection.CustomStorage.Dapper;
 
 /// <inheritdoc />
 public interface IDbDataProtectionStorage:IDataProtectionStorage

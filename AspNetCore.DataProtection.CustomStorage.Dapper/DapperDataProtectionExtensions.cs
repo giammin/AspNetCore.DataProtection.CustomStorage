@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace AspNetCore.DataProtection.Dapper;
+namespace AspNetCore.DataProtection.CustomStorage.Dapper;
 
 /// <summary>
 /// Extension method class for configuring <see cref="DapperDataProtectionRepository"/> as <see cref="IDataProtectionStorage"/>

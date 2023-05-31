@@ -26,7 +26,7 @@
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageReadmeFile Condition="Exists('$(ProjectDir)README.md')">README.md</PackageReadmeFile>
 		<GeneratePackageOnBuild Condition=" '$(Configuration)' == 'Release' ">true</GeneratePackageOnBuild>
-		<PackageProjectUrl>https://github.com/giammin/AspNetCore.DataProtection</PackageProjectUrl>
+		<PackageProjectUrl>https://github.com/giammin/AspNetCore.DataProtection.CustomStorage</PackageProjectUrl>
 		<PackageOutputPath>../build</PackageOutputPath>
 		<IncludeSource>true</IncludeSource>
 		<IncludeSymbols>true</IncludeSymbols>
@@ -35,7 +35,7 @@
 
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-		<RepositoryUrl>https://github.com/giammin/AspNetCore.DataProtection</RepositoryUrl>
+		<RepositoryUrl>https://github.com/giammin/AspNetCore.DataProtection.CustomStorage</RepositoryUrl>
 		<Authors>giammin</Authors>
 		<Company></Company>
 

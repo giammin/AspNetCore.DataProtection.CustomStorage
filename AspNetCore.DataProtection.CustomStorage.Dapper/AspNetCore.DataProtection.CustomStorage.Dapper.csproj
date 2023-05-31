@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AspNetCore.DataProtection\AspNetCore.DataProtection.csproj" />
+    <ProjectReference Include="..\AspNetCore.DataProtection.CustomStorage\AspNetCore.DataProtection.CustomStorage.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-﻿namespace AspNetCore.DataProtection.Dapper;
+﻿namespace AspNetCore.DataProtection.CustomStorage.Dapper;
 
 /// <summary>
 /// dapper storage implementation configuration 

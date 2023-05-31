@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace AspNetCore.DataProtection;
+namespace AspNetCore.DataProtection.CustomStorage;
 
 internal static partial class LoggingExtensions
 {

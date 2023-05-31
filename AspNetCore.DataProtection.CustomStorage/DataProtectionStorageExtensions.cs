@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace AspNetCore.DataProtection;
+namespace AspNetCore.DataProtection.CustomStorage;
 
 /// <summary>
 /// Extension method class for configuring instances of <see cref="IDataProtectionStorage"/>

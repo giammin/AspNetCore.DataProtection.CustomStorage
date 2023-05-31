@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.DataProtection.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace AspNetCore.DataProtection;
+namespace AspNetCore.DataProtection.CustomStorage;
 
 /// <summary>
 /// handle retrieving and store the keys for the DataProtection with a generic storage

@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33712.159
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection", "AspNetCore.DataProtection\AspNetCore.DataProtection.csproj", "{EBDCF592-6A76-495F-B67E-D45D3F628A24}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage", "AspNetCore.DataProtection.CustomStorage\AspNetCore.DataProtection.CustomStorage.csproj", "{EBDCF592-6A76-495F-B67E-D45D3F628A24}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.Dapper", "AspNetCore.DataProtection.Dapper\AspNetCore.DataProtection.Dapper.csproj", "{68F314E4-5096-4EC5-BA5D-16717BB3156A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage.Dapper", "AspNetCore.DataProtection.CustomStorage.Dapper\AspNetCore.DataProtection.CustomStorage.Dapper.csproj", "{68F314E4-5096-4EC5-BA5D-16717BB3156A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{8658EF6B-C5AE-49AC-A7E4-7185005C95D9}"
 	ProjectSection(SolutionItems) = preProject

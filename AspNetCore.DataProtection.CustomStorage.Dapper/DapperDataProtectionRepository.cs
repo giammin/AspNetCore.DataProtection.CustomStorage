@@ -2,7 +2,7 @@
 using Dapper;
 using Microsoft.Extensions.Options;
 
-namespace AspNetCore.DataProtection.Dapper;
+namespace AspNetCore.DataProtection.CustomStorage.Dapper;
 
 /// <inheritdoc />
 public class DapperDataProtectionRepository: IDbDataProtectionStorage
