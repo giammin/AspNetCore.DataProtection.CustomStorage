@@ -1,4 +1,4 @@
-[![Build and test](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/actions/workflows/dotnet.yml/badge.svg)](https://github.com/giammin/AspNetCore.DataProtection/actions/workflows/dotnet.yml)
+[![Build and test](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/actions/workflows/dotnet.yml/badge.svg)](https://github.com/giammin/AspNetCore.DataProtection/actions/workflows/build.yml)
 
 [![Create Release](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/actions/workflows/github-release.yml/badge.svg)](https://github.com/giammin/AspNetCore.DataProtection/actions/workflows/github-release.yml)
 
