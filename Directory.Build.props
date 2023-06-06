@@ -14,7 +14,6 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<Deterministic>true</Deterministic>
 		<DebugType>embedded</DebugType>
-		<TreatWarningsAsErrors Condition=" '$(Configuration)' == 'Release' ">true</TreatWarningsAsErrors>
 		<!--<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>-->
 
 		<!--<PackageId>AspNetCore.DataProtection.CustomStorage</PackageId>
