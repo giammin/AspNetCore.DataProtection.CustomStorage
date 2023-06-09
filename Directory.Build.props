@@ -39,6 +39,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<InternalsVisibleTo Include="$(AssemblyName).Tests" />
 		<None Condition="Exists('$(ProjectDir)README.md')==false" Include="..\README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>
 </Project>
