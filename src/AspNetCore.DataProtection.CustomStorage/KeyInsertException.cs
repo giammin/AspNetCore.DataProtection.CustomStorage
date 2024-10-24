@@ -1,4 +1,6 @@
-﻿namespace AspNetCore.DataProtection.CustomStorage;
+﻿using System;
+
+namespace AspNetCore.DataProtection.CustomStorage;
 
 /// <summary>
 /// exception raised when a new key cannot be inserted
@@ -10,8 +12,5 @@ public class KeyInsertException:Exception
     /// </summary>
     /// <param name="message">the exception message</param>
     /// <param name="innerException">the inner exception</param>
-    public KeyInsertException(string message, Exception innerException):base(message, innerException)
-    {
-       
-    }
+    public KeyInsertException(string message, Exception? innerException=null):base(message, innerException) { }
 }

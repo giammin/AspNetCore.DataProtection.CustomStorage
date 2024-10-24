@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\src\AspNetCore.DataProtection.CustomStorage\AspNetCore.DataProtection.CustomStorage.csproj" />
+	</ItemGroup>
+
+
+</Project>
