@@ -47,20 +47,12 @@ internal class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataP
     public void StoreElement(XElement element, string? friendlyName)
     {
         ArgumentNullException.ThrowIfNull(element);
-        if (!string.IsNullOrWhiteSpace(friendlyName))
-        {
-            //todo friendlyName if not null must be unique
-        }
-        else
-        {
-            friendlyName = null;
-        }
         using var scope = _services.CreateScope();
         var storage = scope.ServiceProvider.GetRequiredService<TStorage>();
 
         var key = new DataProtectionKey
         {
-            FriendlyName = friendlyName,
+            FriendlyName = friendlyName?.Trim(),
             Xml = element.ToString(SaveOptions.DisableFormatting)
         };
         _logger.LogSavingKeyToStorage(key.FriendlyName, key.Xml, typeof(TStorage).Name);

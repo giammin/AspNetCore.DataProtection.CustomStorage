@@ -2,6 +2,8 @@
 	<PropertyGroup Label="Package Versions">
 		<VersionPrefixDataProtection>1.0</VersionPrefixDataProtection>
 		<VersionPrefixDataProtectionDapper>1.0</VersionPrefixDataProtectionDapper>
+		<VersionPrefixDataProtectionDapperPostgreSQL>1.0</VersionPrefixDataProtectionDapperPostgreSQL>
+		<VersionPrefixDataProtectionDapperSQLServer>1.0</VersionPrefixDataProtectionDapperSQLServer>
 	</PropertyGroup>
 	<PropertyGroup>
 		<VersionPrefix Condition=" '$(VersionPrefix)' == '' ">0.1</VersionPrefix>

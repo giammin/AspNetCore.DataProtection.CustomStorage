@@ -8,7 +8,7 @@ public class DapperDataProtectionRepositoryTests
     [Fact]
     public void DapperDataProtectionRepositoryCtor_ContextIsNull_ThrowException()
     {
-        Assert.Throws<ArgumentNullException>(() => new DapperDataProtectionRepository(null!, null!));
+        Assert.Fail("not implemented");
     }
 
     [Fact]
