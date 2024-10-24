@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System;
+using Xunit;
 namespace AspNetCore.DataProtection.CustomStorage.Tests;
 
 //internal class FakeDataProtectionStorage:IDataProtectionStorage

@@ -1,4 +1,6 @@
-﻿namespace AspNetCore.DataProtection.CustomStorage;
+﻿using System.Collections.Generic;
+
+namespace AspNetCore.DataProtection.CustomStorage;
 
 /// <summary>
 /// Storage/repository interface

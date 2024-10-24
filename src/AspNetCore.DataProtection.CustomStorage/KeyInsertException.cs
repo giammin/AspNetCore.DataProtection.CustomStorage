@@ -1,4 +1,6 @@
-﻿namespace AspNetCore.DataProtection.CustomStorage;
+﻿using System;
+
+namespace AspNetCore.DataProtection.CustomStorage;
 
 /// <summary>
 /// exception raised when a new key cannot be inserted

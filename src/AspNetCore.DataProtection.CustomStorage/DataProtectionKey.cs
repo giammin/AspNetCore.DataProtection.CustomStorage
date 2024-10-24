@@ -9,10 +9,10 @@ public record DataProtectionKey
     /// The friendly name of the <see cref="DataProtectionKey"/>.
     /// It must be unique or null
     /// </summary>
-    public string? FriendlyName { get; set; }
+    public string? FriendlyName { get; init; }
 
     /// <summary>
     /// The XML representation of the <see cref="DataProtectionKey"/>.
     /// </summary>
-    public required string Xml { get; set; }
+    public required string Xml { get; init; }
 }
