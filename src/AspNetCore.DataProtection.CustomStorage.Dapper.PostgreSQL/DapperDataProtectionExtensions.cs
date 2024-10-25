@@ -11,6 +11,7 @@ namespace AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL;
 /// </summary>
 public static class DapperDataProtectionExtensions
 {
+    
     /// <summary>
     /// Configures the data protection system to persist keys to a sql server storage
     /// </summary>
@@ -26,8 +27,8 @@ public static class DapperDataProtectionExtensions
 
         var config = new DapperDataProtectionConfig
         {
-            SchemaName = "public",
-            TableName = "data_protection_keys"
+            SchemaName = Constants.DefaultSchema,
+            TableName = Constants.TableName
         };
         configAction?.Invoke(config);
         builder.Services.Configure<DapperDataProtectionConfig>(c =>

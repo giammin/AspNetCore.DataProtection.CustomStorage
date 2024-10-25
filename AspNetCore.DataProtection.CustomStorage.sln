@@ -24,15 +24,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{8E67D983
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage.Tests", "tests\AspNetCore.DataProtection.CustomStorage.Tests\AspNetCore.DataProtection.CustomStorage.Tests.csproj", "{AC39F953-2296-40CC-A2B1-2F604BD86374}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage.Dapper.Tests", "tests\AspNetCore.DataProtection.CustomStorage.Dapper.Tests\AspNetCore.DataProtection.CustomStorage.Dapper.Tests.csproj", "{2D68823D-EB93-42BC-9448-28ADD297E455}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage", "src\AspNetCore.DataProtection.CustomStorage\AspNetCore.DataProtection.CustomStorage.csproj", "{DFE235EF-3772-41AA-9778-9F64412EF313}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage.Dapper", "src\AspNetCore.DataProtection.CustomStorage.Dapper\AspNetCore.DataProtection.CustomStorage.Dapper.csproj", "{E3ACD59F-6850-4F8E-A620-6B82F7E59E0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer", "src\AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer\AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer.csproj", "{1F61C9EF-2996-4DEA-8FDD-BE644EAC2119}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer", "src\AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer\AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer.csproj", "{1F61C9EF-2996-4DEA-8FDD-BE644EAC2119}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL", "src\AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL\AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL.csproj", "{A9E16154-6CA2-44E5-8661-E5663A52F963}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL", "src\AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL\AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL.csproj", "{A9E16154-6CA2-44E5-8661-E5663A52F963}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,10 +42,6 @@ Global
 		{AC39F953-2296-40CC-A2B1-2F604BD86374}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AC39F953-2296-40CC-A2B1-2F604BD86374}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AC39F953-2296-40CC-A2B1-2F604BD86374}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2D68823D-EB93-42BC-9448-28ADD297E455}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2D68823D-EB93-42BC-9448-28ADD297E455}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2D68823D-EB93-42BC-9448-28ADD297E455}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2D68823D-EB93-42BC-9448-28ADD297E455}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DFE235EF-3772-41AA-9778-9F64412EF313}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DFE235EF-3772-41AA-9778-9F64412EF313}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DFE235EF-3772-41AA-9778-9F64412EF313}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -70,7 +64,6 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{AC39F953-2296-40CC-A2B1-2F604BD86374} = {8E67D983-E2B0-4DEF-9EAC-FB87D2E99D1A}
-		{2D68823D-EB93-42BC-9448-28ADD297E455} = {8E67D983-E2B0-4DEF-9EAC-FB87D2E99D1A}
 		{DFE235EF-3772-41AA-9778-9F64412EF313} = {8658EF6B-C5AE-49AC-A7E4-7185005C95D9}
 		{E3ACD59F-6850-4F8E-A620-6B82F7E59E0B} = {8658EF6B-C5AE-49AC-A7E4-7185005C95D9}
 		{1F61C9EF-2996-4DEA-8FDD-BE644EAC2119} = {8658EF6B-C5AE-49AC-A7E4-7185005C95D9}

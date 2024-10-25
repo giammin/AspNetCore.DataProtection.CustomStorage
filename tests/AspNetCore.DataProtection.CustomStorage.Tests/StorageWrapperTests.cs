@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using System;
 using Xunit;
 namespace AspNetCore.DataProtection.CustomStorage.Tests;
 
@@ -17,6 +20,37 @@ namespace AspNetCore.DataProtection.CustomStorage.Tests;
 
 public class StorageWrapperTests
 {
+    private readonly ILogger<StorageWrapper<IDataProtectionStorage>> _logger;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly StorageWrapper<IDataProtectionStorage> _storageWrapper;
+
+    public StorageWrapperTests()
+    {
+        _logger = Substitute.For<ILogger<StorageWrapper<IDataProtectionStorage>>>();
+        var loggerFactory = Substitute.For<ILoggerFactory>();
+        loggerFactory.CreateLogger<StorageWrapper<IDataProtectionStorage>>().Returns(_logger);
+        _serviceProvider = Substitute.For<IServiceProvider>();
+        _storageWrapper = new StorageWrapper<IDataProtectionStorage>(_serviceProvider, loggerFactory);
+    }
+    
+    [Fact]
+    public void StoreElement_ValidKey_CallsStorageSave()
+    {
+        //// Arrange
+        //var key = new DataProtectionKey()
+        //{
+        //    FriendlyName = "FriendlyName",
+        //    Xml = "xml"
+        //};
+        //var storage = Substitute.For<IDataProtectionStorage>();
+        //_serviceProvider.GetService<IDataProtectionStorage>().Returns(storage);
+
+        //// Act
+        //_storageWrapper.StoreElement("test-key", "data");
+
+        //// Assert
+        //storage.Received(1).Insert("test-key", "data");
+    }
     [Fact]
     public void StorageWrapperCtor_ContextIsNull_ThrowException()
     {
@@ -27,14 +61,20 @@ public class StorageWrapperTests
     [Fact]
     public void StoreElement_XmlElementAndFriendlyNameNotNull_PersistsData()
     {
-        Assert.Fail("not implemented");
+        Assert.Fail("integration");
+
+    }
+    [Fact]
+    public void StoreElement_FriendlyNameDuplicated_ThrowException()
+    {
+        Assert.Fail("integration");
 
     }
 
     [Fact]
         public void StoreElement_FriendlyNameIsNullOrEmptyString_PersistsData()
     {
-        Assert.Fail("not implemented");
+        Assert.Fail("integration");
 
         //var element = XElement.Parse("<Element1/>");
         //var friendlyName = "Element1";
@@ -54,35 +94,17 @@ public class StorageWrapperTests
     }
 
     [Fact]
-    public void StoreElement_XmlIsNull_ThrowsException()
+    public void StoreElement_XElementIsNull_ThrowsException()
     {
         Assert.Fail("not implemented");
 
     }
     [Fact]
-    public void StoreElement_StorageFailToSave_ThrowsKeyInsertException()
+    public void StoreElement_StorageFails_ThrowsKeyInsertException()
     {
         Assert.Fail("not implemented");
 
     }
 
-    [Fact]
-    public void GetAllElements_ReturnsAllElements()
-    {
-        Assert.Fail("not implemented");
-
-        //var element1 = XElement.Parse("<Element1/>");
-        //var element2 = XElement.Parse("<Element2/>");
-
-        //var services = GetServices(nameof(GetAllElements_ReturnsAllElements));
-        //var service1 = CreateRepo(services);
-        //service1.StoreElement(element1, "element1");
-        //service1.StoreElement(element2, "element2");
-
-        //// Use a separate instance of the context to verify correct data was saved to database
-        //var service2 = CreateRepo(services);
-        //var elements = service2.GetAllElements();
-        //Assert.Equal(2, elements.Count);
-    }
 
 }

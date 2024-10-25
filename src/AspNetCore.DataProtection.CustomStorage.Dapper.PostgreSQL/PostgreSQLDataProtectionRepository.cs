@@ -36,7 +36,7 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
             $"""
                SELECT
                     id,
-                    insert_date,
+                    insert_date ,
                     friendly_name,
                     xml
                FROM {_config.SchemaName}.{_config.TableName}
@@ -69,12 +69,12 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
               (
                  id INTEGER generated always as identity,
                  insert_date timestamp with time zone NOT NULL default NOW(),
-                 friendly_name character varying(256) COLLATE pg_catalog."default" NOT NULL,
+                 friendly_name character varying(256) COLLATE pg_catalog."default" NULL,
                  xml text COLLATE pg_catalog."default" NOT NULL,
-                 CONSTRAINT pk_{_config.SchemaName}.{_config.TableName} PRIMARY KEY (id)
+                 CONSTRAINT pk_{_config.SchemaName}_{_config.TableName} PRIMARY KEY (id)
               );
                
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_{_config.SchemaName}.{_config.TableName}_friendly_name
+              CREATE UNIQUE INDEX IF NOT EXISTS ix_{_config.SchemaName}_{_config.TableName}_friendly_name
               ON {_config.SchemaName}.{_config.TableName} USING btree
               (friendly_name COLLATE pg_catalog."default" ASC NULLS LAST)
               TABLESPACE pg_default;
