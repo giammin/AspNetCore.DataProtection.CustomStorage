@@ -1,25 +1,25 @@
 ﻿using System;
 using System.Threading.Tasks;
-using AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL;
+using AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer;
 using FluentAssertions;
+using Microsoft.Data.SqlClient;
 using Npgsql;
 using Xunit;
 
-namespace AspNetCore.DataProtection.CustomStorage.Tests.PostgreSQL;
-public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlContainerFixture>
+namespace AspNetCore.DataProtection.CustomStorage.Tests.SQLServer;
+public class SqlServerDataProtectionRepositoryTests : IClassFixture<SqlServerContainerFixture>
 {
-    private readonly PostgreSqlContainerFixture _fixture;
-    private readonly PostgreSQLDataProtectionRepository _sut;
-
-
-    public PostgreSqlDataProtectionRepositoryTests(PostgreSqlContainerFixture fixture)
+    private readonly SqlServerContainerFixture _fixture;
+    private readonly SQLServerDataProtectionRepository _sut;
+    
+    public SqlServerDataProtectionRepositoryTests(SqlServerContainerFixture fixture)
     {
         _fixture = fixture;
-        _sut = new PostgreSQLDataProtectionRepository(fixture.NpgsqlDataSource, fixture.Options);
+        _sut = new SQLServerDataProtectionRepository(fixture.SqlConnectionFactory, fixture.Options);
     }
 
     [Fact]
-    public void Insert_NullKey_ThrowsExeption()
+    public void Insert_NullKey_ThrowsException()
     {
         _sut.Invoking(x => x.Insert(null!))
             .Should().Throw<ArgumentNullException>();
@@ -47,15 +47,16 @@ public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlCo
         };
         _sut.Insert(key);
         _sut.Invoking(x => x.Insert(key))
-            .Should().Throw<PostgresException>().WithMessage("*duplicate key value*");
+            .Should().Throw<SqlException>().WithMessage("*duplicate key*");
     }
 
     [Theory]
     [InlineData("","xml1")]
     [InlineData("   ", "xml2")]
     [InlineData(null, "xml3")]
-    public void Insert_FriendlyNameIsNullOrEmptyString_PersistsData(string? friendlyName, string xml)
+    public async Task Insert_FriendlyNameIsNullOrEmptyString_PersistsData(string? friendlyName, string xml)
     {
+        await _fixture.ResetDatabaseAsync();
         var key = new DataProtectionKey
         {
             FriendlyName = friendlyName,

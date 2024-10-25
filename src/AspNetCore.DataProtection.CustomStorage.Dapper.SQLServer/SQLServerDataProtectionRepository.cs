@@ -75,9 +75,9 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
                        [{nameof(DataProtectionKeyEntity.InsertDate)}] [datetime] NOT NULL default getdate(),
                       [{nameof(DataProtectionKeyEntity.FriendlyName)}] [nvarchar](256) NULL,
                       [{nameof(DataProtectionKeyEntity.Xml)}] [nvarchar](max) NOT NULL,
-                      CONSTRAINT [PK_{_config.TableName}] PRIMARY KEY CLUSTERED ([{nameof(DataProtectionKeyEntity.Id)}] ASC) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+                      CONSTRAINT [PK_{_config.TableName}] PRIMARY KEY CLUSTERED ([{nameof(DataProtectionKeyEntity.Id)}] ASC) ON [PRIMARY]
                   ) ON [PRIMARY];
-                  CREATE UNIQUE NONCLUSTERED INDEX [IX_{_config.TableName}_{nameof(DataProtectionKeyEntity.FriendlyName)}] ON [{_config.SchemaName}].[{_config.TableName}]([{nameof(DataProtectionKeyEntity.FriendlyName)}] ASC) WHERE [{nameof(DataProtectionKeyEntity.FriendlyName)}] IS NOT NULL WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY];
+                  CREATE UNIQUE NONCLUSTERED INDEX [IX_{_config.TableName}_{nameof(DataProtectionKeyEntity.FriendlyName)}] ON [{_config.SchemaName}].[{_config.TableName}]([{nameof(DataProtectionKeyEntity.FriendlyName)}] ASC) WHERE [{nameof(DataProtectionKeyEntity.FriendlyName)}] IS NOT NULL ON [PRIMARY];
                END
                """);
     }

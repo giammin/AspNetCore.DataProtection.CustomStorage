@@ -11,10 +11,11 @@ using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace AspNetCore.DataProtection.CustomStorage.Tests.PostgreSQL;
+
 public class PostgreSqlContainerFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
-        .WithImage("postgres:16.3")
+        .WithImage("postgres:16.4")
         .WithWaitStrategy(Wait.ForUnixContainer())
         .Build();
 
@@ -58,7 +59,7 @@ public class PostgreSqlContainerFixture : IAsyncLifetime
             new RespawnerOptions
             {
                 DbAdapter = DbAdapter.Postgres,
-                SchemasToInclude = ["public"]
+                SchemasToInclude = [Constants.DefaultSchema]
             });
     }
 

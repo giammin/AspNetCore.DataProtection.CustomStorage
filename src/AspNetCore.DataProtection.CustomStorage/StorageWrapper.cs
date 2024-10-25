@@ -13,7 +13,7 @@ namespace AspNetCore.DataProtection.CustomStorage;
 /// handle retrieving and store the keys for the DataProtection with a generic storage
 /// </summary>
 /// <typeparam name="TStorage"></typeparam>
-internal class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataProtectionStorage
+public class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataProtectionStorage
 {
     private readonly IServiceProvider _services;
     private readonly ILogger _logger;

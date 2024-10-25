@@ -41,7 +41,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<InternalsVisibleTo Include="$(AssemblyName).Tests" />
+		<InternalsVisibleTo Include="AspNetCore.DataProtection.CustomStorage.Tests" />
 		<None Condition="Exists('$(ProjectDir)README.md')==false" Include="..\..\README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>
 </Project>

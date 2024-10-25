@@ -20,8 +20,7 @@ public static class DapperDataProtectionExtensions
     {
         using var scope = services.CreateScope();
         var config = scope.ServiceProvider.GetRequiredService<IOptions<DapperDataProtectionConfig>>().Value;
-        var provider = scope.ServiceProvider.GetService<IDbDataProtectionStorage>()
-                       ?? throw new Exception($"{nameof(IDbDataProtectionStorage)} missing from registered services");
+        var provider = scope.ServiceProvider.GetRequiredService<IDbDataProtectionStorage>();
 
         if (config.InitializeTable)
         {
