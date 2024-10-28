@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<VersionPrefix>$(VersionPrefixDataProtectionDapperPostgreSQL)</VersionPrefix>
+		<PackageTags>${PackageTags};dapper;sql server</PackageTags>
+		<Description>Support for storing AspNetCore data protection keys using Dapper in PostgreSQL.</Description>
+	</PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="8.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AspNetCore.DataProtection.CustomStorage.Dapper\AspNetCore.DataProtection.CustomStorage.Dapper.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -3,15 +3,10 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33712.159
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage", "AspNetCore.DataProtection.CustomStorage\AspNetCore.DataProtection.CustomStorage.csproj", "{EBDCF592-6A76-495F-B67E-D45D3F628A24}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage.Dapper", "AspNetCore.DataProtection.CustomStorage.Dapper\AspNetCore.DataProtection.CustomStorage.Dapper.csproj", "{68F314E4-5096-4EC5-BA5D-16717BB3156A}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{8658EF6B-C5AE-49AC-A7E4-7185005C95D9}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8658EF6B-C5AE-49AC-A7E4-7185005C95D9}"
 	ProjectSection(SolutionItems) = preProject
-		Directory.Build.props = Directory.Build.props
-		Directory.Build.targets = Directory.Build.targets
-		versions.props = versions.props
+		src\Directory.Build.props = src\Directory.Build.props
+		src\Directory.Build.targets = src\Directory.Build.targets
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{54236874-4D1E-4E0E-9333-892919EC293F}"
@@ -21,23 +16,58 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{8E67D983-E2B0-4DEF-9EAC-FB87D2E99D1A}"
+	ProjectSection(SolutionItems) = preProject
+		tests\Directory.Build.props = tests\Directory.Build.props
+		tests\Directory.Build.targets = tests\Directory.Build.targets
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage.Tests", "tests\AspNetCore.DataProtection.CustomStorage.Tests\AspNetCore.DataProtection.CustomStorage.Tests.csproj", "{AC39F953-2296-40CC-A2B1-2F604BD86374}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage", "src\AspNetCore.DataProtection.CustomStorage\AspNetCore.DataProtection.CustomStorage.csproj", "{DFE235EF-3772-41AA-9778-9F64412EF313}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage.Dapper", "src\AspNetCore.DataProtection.CustomStorage.Dapper\AspNetCore.DataProtection.CustomStorage.Dapper.csproj", "{E3ACD59F-6850-4F8E-A620-6B82F7E59E0B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer", "src\AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer\AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer.csproj", "{1F61C9EF-2996-4DEA-8FDD-BE644EAC2119}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL", "src\AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL\AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL.csproj", "{A9E16154-6CA2-44E5-8661-E5663A52F963}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{EBDCF592-6A76-495F-B67E-D45D3F628A24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EBDCF592-6A76-495F-B67E-D45D3F628A24}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EBDCF592-6A76-495F-B67E-D45D3F628A24}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EBDCF592-6A76-495F-B67E-D45D3F628A24}.Release|Any CPU.Build.0 = Release|Any CPU
-		{68F314E4-5096-4EC5-BA5D-16717BB3156A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{68F314E4-5096-4EC5-BA5D-16717BB3156A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{68F314E4-5096-4EC5-BA5D-16717BB3156A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{68F314E4-5096-4EC5-BA5D-16717BB3156A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC39F953-2296-40CC-A2B1-2F604BD86374}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC39F953-2296-40CC-A2B1-2F604BD86374}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC39F953-2296-40CC-A2B1-2F604BD86374}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC39F953-2296-40CC-A2B1-2F604BD86374}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DFE235EF-3772-41AA-9778-9F64412EF313}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFE235EF-3772-41AA-9778-9F64412EF313}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DFE235EF-3772-41AA-9778-9F64412EF313}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DFE235EF-3772-41AA-9778-9F64412EF313}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3ACD59F-6850-4F8E-A620-6B82F7E59E0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3ACD59F-6850-4F8E-A620-6B82F7E59E0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3ACD59F-6850-4F8E-A620-6B82F7E59E0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3ACD59F-6850-4F8E-A620-6B82F7E59E0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F61C9EF-2996-4DEA-8FDD-BE644EAC2119}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F61C9EF-2996-4DEA-8FDD-BE644EAC2119}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F61C9EF-2996-4DEA-8FDD-BE644EAC2119}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F61C9EF-2996-4DEA-8FDD-BE644EAC2119}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9E16154-6CA2-44E5-8661-E5663A52F963}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9E16154-6CA2-44E5-8661-E5663A52F963}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9E16154-6CA2-44E5-8661-E5663A52F963}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9E16154-6CA2-44E5-8661-E5663A52F963}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{AC39F953-2296-40CC-A2B1-2F604BD86374} = {8E67D983-E2B0-4DEF-9EAC-FB87D2E99D1A}
+		{DFE235EF-3772-41AA-9778-9F64412EF313} = {8658EF6B-C5AE-49AC-A7E4-7185005C95D9}
+		{E3ACD59F-6850-4F8E-A620-6B82F7E59E0B} = {8658EF6B-C5AE-49AC-A7E4-7185005C95D9}
+		{1F61C9EF-2996-4DEA-8FDD-BE644EAC2119} = {8658EF6B-C5AE-49AC-A7E4-7185005C95D9}
+		{A9E16154-6CA2-44E5-8661-E5663A52F963} = {8658EF6B-C5AE-49AC-A7E4-7185005C95D9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E3E547D3-0100-4B9B-A3F5-E99222944FFC}

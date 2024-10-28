@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\src\AspNetCore.DataProtection.CustomStorage\AspNetCore.DataProtection.CustomStorage.csproj" />
+	  <ProjectReference Include="..\..\src\AspNetCore.DataProtection.CustomStorage.Dapper\AspNetCore.DataProtection.CustomStorage.Dapper.csproj" />
+	  <ProjectReference Include="..\..\src\AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer\AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer.csproj" />
+	  <ProjectReference Include="..\..\src\AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL\AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL.csproj" />
+
+
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<PackageReference Include="Respawn" Version="6.2.1" />
+		<PackageReference Include="Testcontainers.PostgreSql" Version="3.10.0" />
+		<PackageReference Include="Testcontainers.MsSql" Version="3.10.0" />
+		<PackageReference Update="NSubstitute" Version="5.3.0" />
+	</ItemGroup>
+
+
+</Project>

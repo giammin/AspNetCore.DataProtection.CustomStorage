@@ -1,4 +1,7 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.DataProtection.Repositories;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,7 +13,7 @@ namespace AspNetCore.DataProtection.CustomStorage;
 /// handle retrieving and store the keys for the DataProtection with a generic storage
 /// </summary>
 /// <typeparam name="TStorage"></typeparam>
-internal class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataProtectionStorage
+public class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataProtectionStorage
 {
     private readonly IServiceProvider _services;
     private readonly ILogger _logger;
@@ -44,20 +47,12 @@ internal class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataP
     public void StoreElement(XElement element, string? friendlyName)
     {
         ArgumentNullException.ThrowIfNull(element);
-        if (!string.IsNullOrWhiteSpace(friendlyName))
-        {
-            //todo friendlyName if not null must be unique
-        }
-        else
-        {
-            friendlyName = null;
-        }
         using var scope = _services.CreateScope();
         var storage = scope.ServiceProvider.GetRequiredService<TStorage>();
 
         var key = new DataProtectionKey
         {
-            FriendlyName = friendlyName,
+            FriendlyName = friendlyName?.Trim(),
             Xml = element.ToString(SaveOptions.DisableFormatting)
         };
         _logger.LogSavingKeyToStorage(key.FriendlyName, key.Xml, typeof(TStorage).Name);

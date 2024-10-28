@@ -1,4 +1,6 @@
-﻿namespace AspNetCore.DataProtection.CustomStorage.Dapper;
+﻿using System;
+
+namespace AspNetCore.DataProtection.CustomStorage.Dapper;
 
 /// <summary>
 /// the Entity representing the <see cref="DataProtectionKey"/>

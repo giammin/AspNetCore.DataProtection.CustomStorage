@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<VersionPrefix>$(VersionPrefixDataProtectionDapper)</VersionPrefix>
+		<PackageTags>${PackageTags};dapper</PackageTags>
+		<Description>Support for storing AspNetCore data protection keys using Dapper.</Description>
+	</PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.35" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AspNetCore.DataProtection.CustomStorage\AspNetCore.DataProtection.CustomStorage.csproj" />
+  </ItemGroup>
+
+</Project>
