@@ -24,7 +24,7 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<GeneratePackageOnBuild Condition=" '$(Configuration)' == 'Release' ">true</GeneratePackageOnBuild>
 		<PackageProjectUrl>https://github.com/giammin/AspNetCore.DataProtection.CustomStorage</PackageProjectUrl>
-		<PackageOutputPath>../build</PackageOutputPath>
+		<PackageOutputPath>../../build</PackageOutputPath>
 		<IncludeSource>true</IncludeSource>
 		<IncludeSymbols>true</IncludeSymbols>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
