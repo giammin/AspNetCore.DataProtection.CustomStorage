@@ -16,6 +16,7 @@
 		<PackageReference Include="Respawn" Version="6.2.1" />
 		<PackageReference Include="Testcontainers.PostgreSql" Version="3.10.0" />
 		<PackageReference Include="Testcontainers.MsSql" Version="3.10.0" />
+		<PackageReference Update="NSubstitute" Version="5.3.0" />
 	</ItemGroup>
 
 

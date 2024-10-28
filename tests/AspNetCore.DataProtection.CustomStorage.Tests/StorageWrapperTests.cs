@@ -79,7 +79,6 @@ public class StorageWrapperTests
         };
         _storage.Received(1).Insert( Arg.Is(key));
     }
-
     [Fact]
     public void StoreElement_XElementIsNull_ThrowsException()
     {
@@ -94,9 +93,6 @@ public class StorageWrapperTests
         _sut.Invoking(x => x.StoreElement(TestConstants.XElement,TestConstants.FriendlyName))
             .Should().Throw<KeyInsertException>();
     }
-
-    
-
     [Fact]
     public void StoreElement_ShouldCallInsertOnStorage()
     {
@@ -110,5 +106,4 @@ public class StorageWrapperTests
         _storage.Received(1).Insert(Arg.Is<DataProtectionKey>(key =>
             key.FriendlyName == "TestName" && key.Xml == element.ToString(SaveOptions.DisableFormatting)));
     }
-
 }
