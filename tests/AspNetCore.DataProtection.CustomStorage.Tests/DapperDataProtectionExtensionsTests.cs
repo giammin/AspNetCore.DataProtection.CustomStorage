@@ -1,6 +1,5 @@
 ﻿using System;
 using AspNetCore.DataProtection.CustomStorage.Dapper;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NSubstitute;
@@ -10,45 +9,53 @@ namespace AspNetCore.DataProtection.CustomStorage.Tests;
 
 public class DapperDataProtectionExtensionsTests
 {
+    private readonly IServiceProvider _services;
+    private readonly IOptions<DapperDataProtectionConfig> _options;
+    private readonly IDbDataProtectionStorage _provider;
+
+    public DapperDataProtectionExtensionsTests()
+    {
+        _services = Substitute.For<IServiceProvider>();
+        _provider = Substitute.For<IDbDataProtectionStorage>();
+        var scope = Substitute.For<IServiceScope>();
+        var scopeFactory = Substitute.For<IServiceScopeFactory>();
+        _options = Substitute.For<IOptions<DapperDataProtectionConfig>>();
+        
+        _services.GetService(typeof(IServiceScopeFactory)).Returns(scopeFactory);
+        scopeFactory.CreateScope().Returns(scope);
+        scope.ServiceProvider.Returns(_services);
+        _services.GetService(typeof(IOptions<DapperDataProtectionConfig>)).Returns(_options);
+        _services.GetService(typeof(IDbDataProtectionStorage)).Returns(_provider);
+    }
     [Fact]
     public void UseDapperDataProtection_InitializeTable_ExecInitializeDb()
     {
-        var services = Substitute.For<IServiceProvider>();
-        var provider = Substitute.For<IDbDataProtectionStorage>();
-        var scope = Substitute.For<IServiceScope>();
-        var scopeFactory = Substitute.For<IServiceScopeFactory>();
+        var config = new DapperDataProtectionConfig()
+        {
+            SchemaName = "",
+            TableName = "",
+            InitializeTable = true
+        };
+        _options.Value.Returns(config);
+
+        _services.UseDapperDataProtection();
+
+        _provider.Received(1).InitializeDb();
+    }
+    [Fact]
+    public void UseDapperDataProtection_InitializeTableFalse_NotInitializeDb()
+    {
         var config = new DapperDataProtectionConfig()
         {
             SchemaName = "",
             TableName = "",
             InitializeTable = false
         };
-        var options =
-            Substitute.For<IOptions<DapperDataProtectionConfig>>();
-        options.Value.Returns(config);
+        _options.Value.Returns(config);
 
-        services.GetService(typeof(IServiceScopeFactory)).Returns(scopeFactory);
-        scopeFactory.CreateScope().Returns(scope);
-        scope.ServiceProvider.Returns(services);
-        services.GetService(typeof(IOptions<DapperDataProtectionConfig>)).Returns(options);
-        services.GetService(typeof(IDataProtectionStorage)).Returns(provider);
+        _services.UseDapperDataProtection();
 
-        services.UseDapperDataProtection();
-
-        provider.DidNotReceiveWithAnyArgs().InitializeDb();
-    }
-    [Fact]
-    public void UseDapperDataProtection_InitializeTableFalse_NotInitializeDb()
-    {
-        //var serviceCollection = new ServiceCollection();
-        //serviceCollection
-        //    .AddDataProtection()
-        //    .PersistKeysWithDapper();
-        //var serviceProvider = serviceCollection.BuildServiceProvider(validateScopes: true);
-        //var keyManagementOptions = serviceProvider.GetRequiredService<IOptions<KeyManagementOptions>>();
-
-        //Assert.IsAssignableFrom<IDbDataProtectionStorage>(keyManagementOptions.Value.XmlRepository);
-        Assert.Fail("not implemented");
+        _provider.DidNotReceiveWithAnyArgs().InitializeDb();
     }
 
 }
