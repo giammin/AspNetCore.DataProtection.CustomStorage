@@ -6,10 +6,12 @@
 [![GitHub issues](https://img.shields.io/github/issues/giammin/AspNetCore.DataProtection.CustomStorage)](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr-raw/giammin/AspNetCore.DataProtection.CustomStorage)](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/pulls)
 
-| packages | |
-| ------- | ------------ | 
-| AspNetCore.DataProtection.CustomStorage | [![AspNetCore.DataProtection.CustomStorage](https://img.shields.io/nuget/v/AspNetCore.DataProtection.CustomStorage)](https://www.nuget.org/packages/AspNetCore.DataProtection.CustomStorage/) |
-| AspNetCore.DataProtection.CustomStorage.Dapper | [![AspNetCore.DataProtection.CustomStorage.Dapper](https://img.shields.io/nuget/v/AspNetCore.DataProtection.CustomStorage.Dapper)](https://www.nuget.org/packages/AspNetCore.DataProtection.CustomStorage.Dapper/) |
+| packages                                                 |                                                                                                                                                                                                                                           |
+|----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
+| AspNetCore.DataProtection.CustomStorage                  | [![AspNetCore.DataProtection.CustomStorage](https://img.shields.io/nuget/v/AspNetCore.DataProtection.CustomStorage)](https://www.nuget.org/packages/AspNetCore.DataProtection.CustomStorage/)                                             |
+| AspNetCore.DataProtection.CustomStorage.Dapper           | [![AspNetCore.DataProtection.CustomStorage.Dapper](https://img.shields.io/nuget/v/AspNetCore.DataProtection.CustomStorage.Dapper)](https://www.nuget.org/packages/AspNetCore.DataProtection.CustomStorage.Dapper/)                        |
+| AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer | [![AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer](https://img.shields.io/nuget/v/AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer)](https://www.nuget.org/packages/AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer/)                        |
+| AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL | [![AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL](https://img.shields.io/nuget/v/AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL)](https://www.nuget.org/packages/AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL/) |
 
 
 [![GitHub](https://img.shields.io/github/license/giammin/AspNetCore.DataProtection.CustomStorage)](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/blob/main/LICENSE)
@@ -19,3 +21,9 @@ Support for storing ASP.NET Core Data Protection keys using a custom storage
 
 # AspNetCore.DataProtection.CustomStorage.Dapper
 A storage implementation using Dapper
+
+# AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer
+Implementation of a Dapper custom storage in SQLServer
+
+# AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL
+Implementation of a Dapper custom storage in PostgreSQL
