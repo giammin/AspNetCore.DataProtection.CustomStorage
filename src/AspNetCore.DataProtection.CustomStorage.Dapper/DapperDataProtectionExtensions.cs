@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace AspNetCore.DataProtection.CustomStorage.Dapper;
@@ -21,7 +22,8 @@ public static class DapperDataProtectionExtensions
         using var scope = services.CreateScope();
         var config = scope.ServiceProvider.GetRequiredService<IOptions<DapperDataProtectionConfig>>().Value;
         var provider = scope.ServiceProvider.GetRequiredService<IDbDataProtectionStorage>();
-
+        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(DapperDataProtectionExtensions));
+        logger.LogInitialization(config.ToString(), provider.GetType().ToString());
         if (config.InitializeTable)
         {
             provider.InitializeDb();

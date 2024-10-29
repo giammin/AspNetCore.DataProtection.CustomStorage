@@ -13,13 +13,13 @@ public static class DapperDataProtectionExtensions
 {
     
     /// <summary>
-    /// Configures the data protection system to persist keys to a sql server storage
+    /// Configures the data protection system to persist keys to a PostgreSQL storage
     /// </summary>
     /// <param name="builder">The <see cref="IDataProtectionBuilder"/> instance to modify.</param>
     /// <param name="connectionString"></param>
     /// <param name="configAction"></param>
     /// <returns>The value <paramref name="builder"/>.</returns>
-    public static IDataProtectionBuilder PersistKeysWithDapperInSqlServer(this IDataProtectionBuilder builder,
+    public static IDataProtectionBuilder PersistKeysWithDapperInPostgreSQL(this IDataProtectionBuilder builder,
         string connectionString,
         Action<DapperDataProtectionConfig>? configAction = null)
     {

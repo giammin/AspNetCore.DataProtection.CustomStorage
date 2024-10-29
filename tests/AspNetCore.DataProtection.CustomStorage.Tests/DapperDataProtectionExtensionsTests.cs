@@ -1,6 +1,7 @@
 ﻿using System;
 using AspNetCore.DataProtection.CustomStorage.Dapper;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
@@ -16,6 +17,7 @@ public class DapperDataProtectionExtensionsTests
     public DapperDataProtectionExtensionsTests()
     {
         _services = Substitute.For<IServiceProvider>();
+        var loggerFactory = Substitute.For<ILoggerFactory>();
         _provider = Substitute.For<IDbDataProtectionStorage>();
         var scope = Substitute.For<IServiceScope>();
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
@@ -26,6 +28,7 @@ public class DapperDataProtectionExtensionsTests
         scope.ServiceProvider.Returns(_services);
         _services.GetService(typeof(IOptions<DapperDataProtectionConfig>)).Returns(_options);
         _services.GetService(typeof(IDbDataProtectionStorage)).Returns(_provider);
+        _services.GetService(typeof(ILoggerFactory)).Returns(loggerFactory);
     }
     [Fact]
     public void UseDapperDataProtection_InitializeTable_ExecInitializeDb()
