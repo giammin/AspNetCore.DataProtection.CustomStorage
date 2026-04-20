@@ -44,7 +44,6 @@ public static class DapperDataProtectionExtensions
 #endif
         var npgsqlDataSource = npgsqlDataSourceBuilder.Build();
 
-        //dapper
         DefaultTypeMap.MatchNamesWithUnderscores = true;
 
         builder.Services.AddSingleton(npgsqlDataSource);

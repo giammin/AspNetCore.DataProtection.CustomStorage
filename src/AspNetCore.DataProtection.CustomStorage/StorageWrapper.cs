@@ -26,9 +26,10 @@ public class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataPro
     public StorageWrapper(IServiceProvider services, ILoggerFactory loggerFactory)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
+        ArgumentNullException.ThrowIfNull(services);
 
         _logger = loggerFactory.CreateLogger<StorageWrapper<TStorage>>();
-        _services = services ?? throw new ArgumentNullException(nameof(services));
+        _services = services;
     }
 
     /// <inheritdoc />

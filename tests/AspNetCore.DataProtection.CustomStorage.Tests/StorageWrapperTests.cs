@@ -14,14 +14,13 @@ public class StorageWrapperTests
      private readonly StorageWrapper<IDataProtectionStorage> _sut;
      private readonly IServiceProvider _services;
      private readonly ILoggerFactory _loggerFactory;
-     private readonly ILogger<StorageWrapper<IDataProtectionStorage>> _logger;
-     private readonly IDataProtectionStorage _storage;
+     private readonly ILogger<StorageWrapper<IDataProtectionStorage>> _logger = Substitute.For<ILogger<StorageWrapper<IDataProtectionStorage>>>();
+    private readonly IDataProtectionStorage _storage;
 
      public StorageWrapperTests()
      {
          _services = Substitute.For<IServiceProvider>();
          _loggerFactory = Substitute.For<ILoggerFactory>();
-         _logger = Substitute.For<ILogger<StorageWrapper<IDataProtectionStorage>>>();
          _storage = Substitute.For<IDataProtectionStorage>();
 
          var scope = Substitute.For<IServiceScope>();
@@ -30,7 +29,6 @@ public class StorageWrapperTests
          var serviceScopeFactory = Substitute.For<IServiceScopeFactory>();
          serviceScopeFactory.CreateScope().Returns(scope);
 
-         // Configure IServiceProvider to return IServiceScopeFactory
          _services.GetService(typeof(IServiceScopeFactory)).Returns(serviceScopeFactory);
          _services.GetService(typeof(IDataProtectionStorage)).Returns(_storage);
          _services.GetService(typeof(IDbDataProtectionStorage)).Returns(_storage);
@@ -74,10 +72,10 @@ public class StorageWrapperTests
         _sut.StoreElement(TestConstants.XElement, TestConstants.FriendlyName);
         var key = new DataProtectionKey
         {
-            FriendlyName = TestConstants.FriendlyName?.Trim(),
+            FriendlyName = TestConstants.FriendlyName.Trim(),
             Xml = TestConstants.XElement.ToString(SaveOptions.DisableFormatting)
         };
-        _storage.Received(1).Insert( Arg.Is(key));
+        _storage.Received(1).Insert(Arg.Is(key));
     }
     [Fact]
     public void StoreElement_XElementIsNull_ThrowsException()

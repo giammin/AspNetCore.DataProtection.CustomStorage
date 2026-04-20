@@ -44,12 +44,7 @@ public class PostgreSqlContainerFixture : IAsyncLifetime
                 IncludeErrorDetail = true
             }
         };
-#if DEBUG
-        npgsqlDataSourceBuilder.ConnectionStringBuilder.IncludeErrorDetail = true;
-#endif
         NpgsqlDataSource = npgsqlDataSourceBuilder.Build();
-        
-        //dapper
         DefaultTypeMap.MatchNamesWithUnderscores = true;
         SeedDatabase();
         await using var dbConnection = await NpgsqlDataSource.OpenConnectionAsync();

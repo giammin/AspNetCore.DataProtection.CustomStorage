@@ -8,9 +8,9 @@ public static class Constants
     /// <summary>
     /// default schema name
     /// </summary>
-    public static string DefaultSchema = "dbo";
+    public const string DefaultSchema = "dbo";
     /// <summary>
     /// default keys table name
     /// </summary>
-    public static string TableName = "DataProtectionKeys";
+    public const string TableName = "DataProtectionKeys";
 }

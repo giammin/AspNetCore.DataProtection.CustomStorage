@@ -12,6 +12,15 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
     private readonly SqlConnectionFactory _connectionFactory;
     private readonly DapperDataProtectionConfig _config;
 
+    private string GetAllQuery() => 
+            $"""
+                SELECT
+                    [{nameof(DataProtectionKeyEntity.Id)}],
+                    [{nameof(DataProtectionKeyEntity.InsertDate)}],
+                    [{nameof(DataProtectionKeyEntity.FriendlyName)}],
+                    [{nameof(DataProtectionKeyEntity.Xml)}]
+                FROM [{_config.SchemaName}].[{_config.TableName}];
+                """;
     /// <summary>
     /// create an instance of <see cref="SQLServerDataProtectionRepository"/>
     /// </summary>
@@ -25,21 +34,17 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
     }
 
     /// <inheritdoc />
-    public IEnumerable<DataProtectionKey> GetAll() => GetAllAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+    public IEnumerable<DataProtectionKey> GetAll() 
+    {
+        using var connection = _connectionFactory.CreateConnection();
+        return connection.Query<DataProtectionKeyEntity>(GetAllQuery());
+    }
 
     /// <inheritdoc />
     public async Task<IEnumerable<DataProtectionKeyEntity>> GetAllAsync()
     {
         await using var connection = _connectionFactory.CreateConnection();
-        return await connection.QueryAsync<DataProtectionKeyEntity>(
-            $"""
-                SELECT
-                    [{nameof(DataProtectionKeyEntity.Id)}],
-                    [{nameof(DataProtectionKeyEntity.InsertDate)}],
-                    [{nameof(DataProtectionKeyEntity.FriendlyName)}],
-                    [{nameof(DataProtectionKeyEntity.Xml)}]
-                FROM [{_config.SchemaName}].[{_config.TableName}]
-                """);
+        return await connection.QueryAsync<DataProtectionKeyEntity>(GetAllQuery());
     }
 
     /// <inheritdoc />

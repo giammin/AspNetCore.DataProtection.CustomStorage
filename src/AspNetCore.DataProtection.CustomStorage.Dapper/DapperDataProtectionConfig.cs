@@ -18,5 +18,5 @@ public record DapperDataProtectionConfig
     /// if true at start it will create the table if not present
     /// Default=true
     /// </summary>
-    public bool InitializeTable { get; set; }=true;
+    public bool InitializeTable { get; set; } = true;
 }

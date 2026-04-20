@@ -24,8 +24,8 @@ public static class DapperDataProtectionExtensions
 
         var config = new DapperDataProtectionConfig
         {
-            SchemaName = "dbo",
-            TableName = "DataProtectionKeys"
+            SchemaName = Constants.DefaultSchema,
+            TableName = Constants.TableName
         };
         configAction?.Invoke(config);
         builder.Services.Configure<DapperDataProtectionConfig>(c =>
