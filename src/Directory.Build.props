@@ -1,9 +1,9 @@
 <Project>
 	<PropertyGroup Label="Package Versions">
-		<VersionPrefixDataProtection>1.0</VersionPrefixDataProtection>
-		<VersionPrefixDataProtectionDapper>1.0</VersionPrefixDataProtectionDapper>
-		<VersionPrefixDataProtectionDapperPostgreSQL>1.0</VersionPrefixDataProtectionDapperPostgreSQL>
-		<VersionPrefixDataProtectionDapperSQLServer>1.0</VersionPrefixDataProtectionDapperSQLServer>
+		<VersionPrefixDataProtection>1.1</VersionPrefixDataProtection>
+		<VersionPrefixDataProtectionDapper>1.1</VersionPrefixDataProtectionDapper>
+		<VersionPrefixDataProtectionDapperPostgreSQL>1.1</VersionPrefixDataProtectionDapperPostgreSQL>
+		<VersionPrefixDataProtectionDapperSQLServer>1.1</VersionPrefixDataProtectionDapperSQLServer>
 	</PropertyGroup>
 	<PropertyGroup>
 		<VersionPrefix Condition=" '$(VersionPrefix)' == '' ">0.1</VersionPrefix>
