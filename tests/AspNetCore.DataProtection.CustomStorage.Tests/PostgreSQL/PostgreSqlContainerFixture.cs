@@ -33,7 +33,7 @@ public class PostgreSqlContainerFixture : IAsyncLifetime
         });
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _dbContainer.StartAsync();
 
@@ -74,7 +74,7 @@ public class PostgreSqlContainerFixture : IAsyncLifetime
         await _respawner.ResetAsync(dbConnection);
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await NpgsqlDataSource.DisposeAsync();
         await _dbContainer.StopAsync();

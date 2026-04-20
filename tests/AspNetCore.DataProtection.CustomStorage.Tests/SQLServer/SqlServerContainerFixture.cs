@@ -34,7 +34,7 @@ public class SqlServerContainerFixture : IAsyncLifetime
         });
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _dbContainer.StartAsync();
 
@@ -45,7 +45,10 @@ public class SqlServerContainerFixture : IAsyncLifetime
             InitialCatalog = initialCatalog,
         };
 
-        SqlConnectionFactory = new SqlConnectionFactory(connectionStringBuilder.ConnectionString);
+        SqlConnectionFactory = new SqlConnectionFactory(connectionStringBuilder.ConnectionString
+                //quick hack for just my configuration (docker on wsl2)
+                .Replace("localhost", "127.0.0.1")
+        );
 
         SeedDatabase();
         await using var dbConnection = SqlConnectionFactory.CreateConnection();
@@ -72,7 +75,7 @@ public class SqlServerContainerFixture : IAsyncLifetime
         await _respawner.ResetAsync(dbConnection);
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _dbContainer.StopAsync();
         await _dbContainer.DisposeAsync();
