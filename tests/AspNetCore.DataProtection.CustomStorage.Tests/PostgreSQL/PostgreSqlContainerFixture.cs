@@ -14,8 +14,7 @@ namespace AspNetCore.DataProtection.CustomStorage.Tests.PostgreSQL;
 
 public class PostgreSqlContainerFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
-        .WithImage("postgres:16.4")
+    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder("postgres:16.4")
         .WithWaitStrategy(Wait.ForUnixContainer())
         .Build();
 

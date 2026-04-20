@@ -14,8 +14,7 @@ using Constants = AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer.Const
 namespace AspNetCore.DataProtection.CustomStorage.Tests.SQLServer;
 public class SqlServerContainerFixture : IAsyncLifetime
 {
-    private readonly MsSqlContainer _dbContainer = new MsSqlBuilder()
-        .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
+    private readonly MsSqlContainer _dbContainer = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")
         .WithPassword(Guid.NewGuid().ToString())
         .WithExposedPort(1433).WithPortBinding(1433, true)
         .Build();
