@@ -1,14 +1,14 @@
 <Project>
 	<PropertyGroup Label="Package Versions">
-		<VersionPrefixDataProtection>1.0</VersionPrefixDataProtection>
-		<VersionPrefixDataProtectionDapper>1.0</VersionPrefixDataProtectionDapper>
-		<VersionPrefixDataProtectionDapperPostgreSQL>1.0</VersionPrefixDataProtectionDapperPostgreSQL>
-		<VersionPrefixDataProtectionDapperSQLServer>1.0</VersionPrefixDataProtectionDapperSQLServer>
+		<VersionPrefixDataProtection>1.1</VersionPrefixDataProtection>
+		<VersionPrefixDataProtectionDapper>1.1</VersionPrefixDataProtectionDapper>
+		<VersionPrefixDataProtectionDapperPostgreSQL>1.1</VersionPrefixDataProtectionDapperPostgreSQL>
+		<VersionPrefixDataProtectionDapperSQLServer>1.1</VersionPrefixDataProtectionDapperSQLServer>
 	</PropertyGroup>
 	<PropertyGroup>
 		<VersionPrefix Condition=" '$(VersionPrefix)' == '' ">0.1</VersionPrefix>
 		
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<TreatWarningsAsErrors Condition=" '$(Configuration)' == 'Release' ">true</TreatWarningsAsErrors>
@@ -41,6 +41,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.6" />
 		<InternalsVisibleTo Include="AspNetCore.DataProtection.CustomStorage.Tests" />
 		<None Condition="Exists('$(ProjectDir)README.md')==false" Include="..\..\README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>

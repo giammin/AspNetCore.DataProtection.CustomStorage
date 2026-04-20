@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/src/">
+    <File Path="src\Directory.Build.props" />
+    <File Path="src\Directory.Build.targets" />
+    <Project Path="src\AspNetCore.DataProtection.CustomStorage\AspNetCore.DataProtection.CustomStorage.csproj" />
+    <Project Path="src\AspNetCore.DataProtection.CustomStorage.Dapper\AspNetCore.DataProtection.CustomStorage.Dapper.csproj" />
+    <Project Path="src\AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer\AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer.csproj" />
+    <Project Path="src\AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL\AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL.csproj" />
+  </Folder>
+  <Folder Name="/SolutionItems/">
+    <File Path="LICENSE" />
+    <File Path="NuGet.Config" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <File Path="tests\Directory.Build.props" />
+    <File Path="tests\Directory.Build.targets" />
+    <Project Path="tests\AspNetCore.DataProtection.CustomStorage.Tests\AspNetCore.DataProtection.CustomStorage.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -14,8 +14,7 @@ using Constants = AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer.Const
 namespace AspNetCore.DataProtection.CustomStorage.Tests.SQLServer;
 public class SqlServerContainerFixture : IAsyncLifetime
 {
-    private readonly MsSqlContainer _dbContainer = new MsSqlBuilder()
-        .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
+    private readonly MsSqlContainer _dbContainer = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")
         .WithPassword(Guid.NewGuid().ToString())
         .WithExposedPort(1433).WithPortBinding(1433, true)
         .Build();
@@ -35,7 +34,7 @@ public class SqlServerContainerFixture : IAsyncLifetime
         });
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _dbContainer.StartAsync();
 
@@ -46,7 +45,10 @@ public class SqlServerContainerFixture : IAsyncLifetime
             InitialCatalog = initialCatalog,
         };
 
-        SqlConnectionFactory = new SqlConnectionFactory(connectionStringBuilder.ConnectionString);
+        SqlConnectionFactory = new SqlConnectionFactory(connectionStringBuilder.ConnectionString
+                //quick hack for just my configuration (docker on wsl2)
+                .Replace("localhost", "127.0.0.1")
+        );
 
         SeedDatabase();
         await using var dbConnection = SqlConnectionFactory.CreateConnection();
@@ -73,7 +75,7 @@ public class SqlServerContainerFixture : IAsyncLifetime
         await _respawner.ResetAsync(dbConnection);
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _dbContainer.StopAsync();
         await _dbContainer.DisposeAsync();

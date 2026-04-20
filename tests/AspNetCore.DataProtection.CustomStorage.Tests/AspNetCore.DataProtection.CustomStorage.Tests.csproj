@@ -11,13 +11,17 @@
 
 	</ItemGroup>
 
+	<ItemGroup>
+		<PackageReference Update="xunit.runner.visualstudio">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Respawn" Version="6.2.1" />
-		<PackageReference Include="Testcontainers.PostgreSql" Version="4.0.0" />
-		<PackageReference Include="Testcontainers.MsSql" Version="4.0.0" />
-		<PackageReference Update="NSubstitute" Version="5.3.0" />
-		<PackageReference Update="FluentAssertions" Version="6.12.2" />
+		<PackageReference Include="Respawn" Version="7.0.0" />
+		<PackageReference Include="Testcontainers.PostgreSql" Version="4.11.0" />
+		<PackageReference Include="Testcontainers.MsSql" Version="4.11.0" />
 	</ItemGroup>
 
 

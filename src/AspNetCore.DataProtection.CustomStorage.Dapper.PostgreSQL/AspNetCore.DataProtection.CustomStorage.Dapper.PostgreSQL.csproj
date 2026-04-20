@@ -5,7 +5,7 @@
 		<Description>Support for storing AspNetCore data protection keys using Dapper in PostgreSQL.</Description>
 	</PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="8.0.5" />
+    <PackageReference Include="Npgsql" Version="10.0.2" />
   </ItemGroup>
 
   <ItemGroup>
