@@ -1,12 +1,12 @@
 <Project>
   <PropertyGroup>
 	  
-	  <versionBuild>0</versionBuild>
+	  <versionBuild>3</versionBuild>
 	  <versionRevision>0</versionRevision>
 	  <buildNumber>$([System.DateTime]::Now.ToString(yyMM)).$([System.DateTime]::Now.ToString(dd))</buildNumber>
 	  <FileVersion>$(VersionPrefix).$(buildNumber)$(versionBuild)$(versionRevision)</FileVersion>
 	  <AssemblyVersion>$(VersionPrefix).$(versionBuild).$(versionRevision)</AssemblyVersion>
-	  <PackageVersion>$(VersionPrefix).2</PackageVersion>
+	  <PackageVersion>$(VersionPrefix).3</PackageVersion>
 	  <Version>$(PackageVersion)</Version>
   </PropertyGroup>
 </Project>

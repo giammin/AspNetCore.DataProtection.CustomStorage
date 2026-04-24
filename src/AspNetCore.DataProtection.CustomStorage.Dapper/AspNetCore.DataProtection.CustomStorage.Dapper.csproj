@@ -13,4 +13,8 @@
     <ProjectReference Include="..\AspNetCore.DataProtection.CustomStorage\AspNetCore.DataProtection.CustomStorage.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Update="System.Security.Cryptography.Xml" Version="10.0.7" />
+  </ItemGroup>
+
 </Project>

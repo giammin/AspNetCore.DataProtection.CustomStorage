@@ -10,4 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AspNetCore.DataProtection.CustomStorage.Dapper\AspNetCore.DataProtection.CustomStorage.Dapper.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Update="System.Security.Cryptography.Xml" Version="10.0.7" />
+  </ItemGroup>
 </Project>
