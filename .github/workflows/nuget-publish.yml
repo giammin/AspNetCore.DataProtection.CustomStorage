@@ -18,7 +18,10 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore -c Release
+      # Derive the package version from the pushed tag (e.g. v1.1.4 -> 1.1.4).
+      # -p:Version is a global MSBuild property; PackageVersion, FileVersion and
+      # AssemblyVersion all derive from it.
+      run: dotnet build --no-restore -c Release -p:Version=${GITHUB_REF_NAME#v}
     - name: Test
       run: dotnet test --no-build --verbosity normal -c Release
     - name: NuGet login (OIDC → temp API key) # Get a short-lived NuGet API key
@@ -27,4 +30,4 @@ jobs:
       with:
        user: ${{ secrets.NUGET_USER }}          
     - name: Push
-      run: dotnet nuget push "./build/*.symbols.nupkg" --skip-duplicate --api-key  ${{steps.login.outputs.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push "./build/*.symbols.nupkg" --api-key  ${{steps.login.outputs.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
