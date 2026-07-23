@@ -102,6 +102,6 @@ public class StorageWrapperTests
 
         // Assert
         _storage.Received(1).Insert(Arg.Is<DataProtectionKey>(key =>
-            key.FriendlyName == "TestName" && key.Xml == element.ToString(SaveOptions.DisableFormatting)));
+            key != null && key.FriendlyName == "TestName" && key.Xml == element.ToString(SaveOptions.DisableFormatting)));
     }
 }

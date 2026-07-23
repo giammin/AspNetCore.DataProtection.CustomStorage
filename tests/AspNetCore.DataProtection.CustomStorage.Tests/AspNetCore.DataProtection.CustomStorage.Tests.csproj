@@ -19,9 +19,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Respawn" Version="7.0.0" />
-		<PackageReference Include="Testcontainers.PostgreSql" Version="4.11.0" />
-		<PackageReference Include="Testcontainers.MsSql" Version="4.11.0" />
+		<PackageReference Include="Respawn" />
+		<PackageReference Include="Testcontainers.PostgreSql" />
+		<PackageReference Include="Testcontainers.MsSql" />
 	</ItemGroup>
 
 

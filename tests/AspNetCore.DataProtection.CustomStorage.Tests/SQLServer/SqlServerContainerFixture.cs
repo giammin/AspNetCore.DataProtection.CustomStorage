@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using AspNetCore.DataProtection.CustomStorage.Dapper;
-using AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL;
 using AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;

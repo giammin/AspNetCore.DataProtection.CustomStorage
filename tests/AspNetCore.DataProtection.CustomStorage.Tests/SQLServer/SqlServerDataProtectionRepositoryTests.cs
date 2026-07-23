@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer;
 using FluentAssertions;
 using Microsoft.Data.SqlClient;
-using Npgsql;
 using Xunit;
 
 namespace AspNetCore.DataProtection.CustomStorage.Tests.SQLServer;

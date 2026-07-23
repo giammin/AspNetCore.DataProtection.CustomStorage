@@ -5,12 +5,9 @@
 		<Description>Support for storing AspNetCore data protection keys using Dapper in SQLServer.</Description>
 	</PropertyGroup>
 	<ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AspNetCore.DataProtection.CustomStorage.Dapper\AspNetCore.DataProtection.CustomStorage.Dapper.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Update="System.Security.Cryptography.Xml" Version="10.0.7" />
   </ItemGroup>
 </Project>

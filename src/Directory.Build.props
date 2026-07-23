@@ -41,7 +41,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.6" />
+		<PackageReference Include="System.Security.Cryptography.Xml" />
 		<InternalsVisibleTo Include="AspNetCore.DataProtection.CustomStorage.Tests" />
 		<None Condition="Exists('$(ProjectDir)README.md')==false" Include="..\..\README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>
