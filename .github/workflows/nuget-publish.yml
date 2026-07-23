@@ -18,7 +18,10 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore -c Release
+      # Derive the package version from the pushed tag (e.g. v1.1.4 -> 1.1.4).
+      # -p:PackageVersion is a global MSBuild property, so it overrides the value
+      # hardcoded in src/Directory.Build.targets.
+      run: dotnet build --no-restore -c Release -p:PackageVersion=${GITHUB_REF_NAME#v}
     - name: Test
       run: dotnet test --no-build --verbosity normal -c Release
     - name: NuGet login (OIDC → temp API key) # Get a short-lived NuGet API key
