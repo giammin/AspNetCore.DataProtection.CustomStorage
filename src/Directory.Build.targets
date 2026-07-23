@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
 	  
-	  <versionBuild>3</versionBuild>
+	  <versionBuild>4</versionBuild>
 	  <versionRevision>0</versionRevision>
 	  <buildNumber>$([System.DateTime]::Now.ToString(yyMM)).$([System.DateTime]::Now.ToString(dd))</buildNumber>
 	  <FileVersion>$(VersionPrefix).$(buildNumber)$(versionBuild)$(versionRevision)</FileVersion>

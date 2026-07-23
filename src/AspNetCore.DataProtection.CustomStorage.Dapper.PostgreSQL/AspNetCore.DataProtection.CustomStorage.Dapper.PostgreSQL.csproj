@@ -5,15 +5,11 @@
 		<Description>Support for storing AspNetCore data protection keys using Dapper in PostgreSQL.</Description>
 	</PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="10.0.2" />
+    <PackageReference Include="Npgsql" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\AspNetCore.DataProtection.CustomStorage.Dapper\AspNetCore.DataProtection.CustomStorage.Dapper.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="System.Security.Cryptography.Xml" Version="10.0.7" />
   </ItemGroup>
 
 </Project>

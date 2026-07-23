@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <File Path="Directory.Packages.props" />
     <File Path="src\Directory.Build.props" />
     <File Path="src\Directory.Build.targets" />
     <Project Path="src\AspNetCore.DataProtection.CustomStorage\AspNetCore.DataProtection.CustomStorage.csproj" />
