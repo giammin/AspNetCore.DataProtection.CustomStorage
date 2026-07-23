@@ -8,6 +8,11 @@
     <Project Path="src\AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer\AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer.csproj" />
     <Project Path="src\AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL\AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL.csproj" />
   </Folder>
+  <Folder Name="/github/">
+    <File Path=".github/workflows/build.yml" />
+    <File Path=".github/workflows/github-release.yml" />
+    <File Path=".github/workflows/nuget-publish.yml" />
+  </Folder>
   <Folder Name="/SolutionItems/">
     <File Path="LICENSE" />
     <File Path="NuGet.Config" />
