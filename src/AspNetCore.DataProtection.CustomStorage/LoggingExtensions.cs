@@ -6,7 +6,7 @@ namespace AspNetCore.DataProtection.CustomStorage;
 /// <summary>
 /// High-performance logging extensions for data protection storage operations.
 /// </summary>
-public static partial class LoggingExtensions
+internal static partial class LoggingExtensions
 {
     /// <summary>
     /// Logs a debug message when reading a key from storage.
@@ -28,10 +28,4 @@ public static partial class LoggingExtensions
     /// </summary>
     [LoggerMessage(3, LogLevel.Error, "Error saving key '{FriendlyName}' with '{storage}'.", EventName = "ErrorSavingKeyToStorage")]
     public static partial void LogErrorSavingKeyToStorage(this ILogger logger, Exception exception, string? friendlyName, string storage);
-
-    /// <summary>
-    /// Logs a debug message during data protection initialization.
-    /// </summary>
-    [LoggerMessage(4, LogLevel.Debug, "UseDapperDataProtection config:'{Config}', storage: '{storage}'.", EventName = "InitializingDapperDataProtection")]
-    public static partial void LogInitialization(this ILogger logger, string config, string storage);
 }
