@@ -1,9 +1,7 @@
 <Project>
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
 		<UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
-		<TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
 	</PropertyGroup>
 	<ItemGroup>
 		<Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
