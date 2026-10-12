@@ -39,7 +39,7 @@ public class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataPro
         var storage = scope.ServiceProvider.GetRequiredService<TStorage>();
         return storage.GetAll().Select(key =>
         {
-            _logger.ReadingXmlFromKey(key.FriendlyName, key.Xml);
+            _logger.ReadingXmlFromKey(key.FriendlyName);
             return XElement.Parse(key.Xml);
         }).ToImmutableArray();
     }
@@ -56,16 +56,17 @@ public class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataPro
             FriendlyName = friendlyName?.Trim(),
             Xml = element.ToString(SaveOptions.DisableFormatting)
         };
-        _logger.LogSavingKeyToStorage(key.FriendlyName, key.Xml, typeof(TStorage).Name);
+        _logger.LogSavingKeyToStorage(key.FriendlyName, typeof(TStorage).Name);
         try
         {
             storage.Insert(key);
         }
         catch (Exception e)
         {
-            _logger.LogErrorSavingKeyToStorage(key.FriendlyName, key.Xml, typeof(TStorage).Name);
+            _logger.LogErrorSavingKeyToStorage(e, key.FriendlyName, typeof(TStorage).Name);
 
-            throw new KeyInsertException($"Cannot insert key {key}", e);
+            // The key XML is deliberately excluded: it may contain unencrypted key material.
+            throw new KeyInsertException($"Cannot insert key '{key.FriendlyName}'", e);
         }
     }
 }
