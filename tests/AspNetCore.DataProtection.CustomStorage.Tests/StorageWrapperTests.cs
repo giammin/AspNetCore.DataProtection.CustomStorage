@@ -104,4 +104,61 @@ public class StorageWrapperTests
         _storage.Received(1).Insert(Arg.Is<DataProtectionKey>(key =>
             key != null && key.FriendlyName == "TestName" && key.Xml == element.ToString(SaveOptions.DisableFormatting)));
     }
+
+    private const string KeyMaterial = "c2VjcmV0LWtleS1tYXRlcmlhbA==";
+    private const string KeyFriendlyName = "key-6f1c2b9e";
+    private static readonly XElement KeyElement = new("key", new XElement("masterKey", KeyMaterial));
+
+    [Fact]
+    public void GetAllElements_KeyRead_DoesNotLogKeyXml()
+    {
+        var loggerFactory = new CapturingLoggerFactory();
+        var sut = new StorageWrapper<IDataProtectionStorage>(_services, loggerFactory);
+        _storage.GetAll().Returns([new DataProtectionKey { FriendlyName = KeyFriendlyName, Xml = KeyElement.ToString() }]);
+
+        sut.GetAllElements();
+
+        loggerFactory.Entries.Should().Contain(e => e.Contains(KeyFriendlyName));
+        loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
+    }
+
+    [Fact]
+    public void StoreElement_KeySaved_DoesNotLogKeyXml()
+    {
+        var loggerFactory = new CapturingLoggerFactory();
+        var sut = new StorageWrapper<IDataProtectionStorage>(_services, loggerFactory);
+
+        sut.StoreElement(KeyElement, KeyFriendlyName);
+
+        loggerFactory.Entries.Should().Contain(e => e.Contains(KeyFriendlyName));
+        loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
+    }
+
+    [Fact]
+    public void StoreElement_StorageFails_LogsErrorWithStorageExceptionAndWithoutKeyXml()
+    {
+        var loggerFactory = new CapturingLoggerFactory();
+        var sut = new StorageWrapper<IDataProtectionStorage>(_services, loggerFactory);
+        var storageException = new InvalidOperationException("insert failed");
+        _storage.WhenForAnyArgs(x => x.Insert(null!)).Throw(storageException);
+
+        sut.Invoking(x => x.StoreElement(KeyElement, KeyFriendlyName)).Should().Throw<KeyInsertException>();
+
+        loggerFactory.Entries.Should().ContainSingle(e => e.Level == LogLevel.Error)
+            .Which.Exception.Should().BeSameAs(storageException);
+        loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
+    }
+
+    [Fact]
+    public void StoreElement_StorageFails_ExceptionMessageNamesKeyWithoutKeyXml()
+    {
+        var storageException = new InvalidOperationException("insert failed");
+        _storage.WhenForAnyArgs(x => x.Insert(null!)).Throw(storageException);
+
+        var exception = _sut.Invoking(x => x.StoreElement(KeyElement, KeyFriendlyName))
+            .Should().Throw<KeyInsertException>().Which;
+
+        exception.Message.Should().Contain(KeyFriendlyName).And.NotContain(KeyMaterial);
+        exception.InnerException.Should().BeSameAs(storageException);
+    }
 }
