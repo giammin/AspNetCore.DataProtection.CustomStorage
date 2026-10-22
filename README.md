@@ -1,5 +1,4 @@
 [![Build and test](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/actions/workflows/build.yml/badge.svg)](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/actions/workflows/build.yml)
-[![Create Release](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/actions/workflows/github-release.yml/badge.svg)](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/actions/workflows/github-release.yml)
 [![Publish Nuget package](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/actions/workflows/nuget-publish.yml/badge.svg)](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/actions/workflows/nuget-publish.yml)
 
 [![GitHub release](https://img.shields.io/github/v/release/giammin/AspNetCore.DataProtection.CustomStorage)](https://github.com/giammin/AspNetCore.DataProtection.CustomStorage/releases)
