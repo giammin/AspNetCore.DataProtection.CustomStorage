@@ -18,6 +18,7 @@ public class PostgreSqlContainerFixture : IAsyncLifetime
         .WithWaitStrategy(Wait.ForUnixContainer())
         .Build();
 
+    public string ConnectionString => _dbContainer.GetConnectionString();
     public NpgsqlDataSource NpgsqlDataSource { get; private set; } = null!;
     public readonly IOptionsSnapshot<DapperDataProtectionConfig> Options =
             Substitute.For<IOptionsSnapshot<DapperDataProtectionConfig>>();

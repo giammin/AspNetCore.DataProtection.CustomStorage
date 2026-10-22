@@ -20,6 +20,7 @@ dotnet test --no-build -c Release --filter-method "*.StorageWrapperTests.StoreEl
 - `global.json` switches `dotnet test` to the native Microsoft Testing Platform (MTP) mode (`"test": { "runner": "Microsoft.Testing.Platform" }`). This is required: xUnit v3 4.x ships MTP 2.x, which no longer runs under the legacy VSTest mode on the .NET 10 SDK. In MTP mode, select targets with `--project` / `--solution` instead of a positional path.
 - `TreatWarningsAsErrors` is enabled in Release builds for `src/`. Combined with `GenerateDocumentationFile`, every public member needs an XML doc comment or the Release build fails. Always build with `-c Release` before considering a session complete.
 - SQL Server and PostgreSQL tests start real containers; the first run pulls images and is slow.
+- On Windows with a Docker engine running inside WSL2 (no Docker Desktop), `localhost` resolves to `::1` first and SQL Server connections time out. Set `TESTCONTAINERS_HOST_OVERRIDE=127.0.0.1` (or `host.override=127.0.0.1` in `~/.testcontainers.properties`) instead of patching connection strings in the fixtures.
 
 ## Build Configuration
 
@@ -71,6 +72,7 @@ Single test project: `tests/AspNetCore.DataProtection.CustomStorage.Tests` (xUni
 
 - `StorageWrapperTests` and `DapperDataProtectionExtensionsTests` are pure unit tests.
 - `SQLServer/` and `PostgreSQL/` tests use an `IClassFixture` (`*ContainerFixture`) that starts a Testcontainers database, calls `InitializeDb()` with the default config, and exposes `ResetDatabaseAsync()` (Respawn) to clear data between tests.
+- `*EndToEndTests` wire each provider through the public extension methods and a real DI container (`AddDataProtection().PersistKeysWithDapperIn...()`, `UseDapperDataProtection()`), then protect/unprotect, including across two service providers sharing one table. Each test uses its own table, so it does not depend on Respawn.
 
 ### CI/CD (`.github/workflows`)
 

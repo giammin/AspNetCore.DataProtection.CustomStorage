@@ -2,10 +2,10 @@
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using System;
+using System.Linq;
 using System.Xml.Linq;
 using FluentAssertions;
 using Xunit;
-using AspNetCore.DataProtection.CustomStorage.Dapper;
 
 namespace AspNetCore.DataProtection.CustomStorage.Tests;
 
@@ -13,6 +13,8 @@ public class StorageWrapperTests
 {
      private readonly StorageWrapper<IDataProtectionStorage> _sut;
      private readonly IServiceProvider _services;
+     private readonly IServiceScopeFactory _scopeFactory;
+     private readonly IServiceScope _scope;
      private readonly ILoggerFactory _loggerFactory;
      private readonly ILogger _logger = Substitute.For<ILogger>();
     private readonly IDataProtectionStorage _storage;
@@ -23,21 +25,23 @@ public class StorageWrapperTests
          _loggerFactory = Substitute.For<ILoggerFactory>();
          _storage = Substitute.For<IDataProtectionStorage>();
 
-         var scope = Substitute.For<IServiceScope>();
-         scope.ServiceProvider.Returns(_services);
+         // The storage is resolvable only from the scoped provider, not from the root one.
+         var scopedServices = Substitute.For<IServiceProvider>();
+         scopedServices.GetService(typeof(IDataProtectionStorage)).Returns(_storage);
 
-         var serviceScopeFactory = Substitute.For<IServiceScopeFactory>();
-         serviceScopeFactory.CreateScope().Returns(scope);
+         _scope = Substitute.For<IServiceScope>();
+         _scope.ServiceProvider.Returns(scopedServices);
 
-         _services.GetService(typeof(IServiceScopeFactory)).Returns(serviceScopeFactory);
-         _services.GetService(typeof(IDataProtectionStorage)).Returns(_storage);
-         _services.GetService(typeof(IDbDataProtectionStorage)).Returns(_storage);
-        
+         _scopeFactory = Substitute.For<IServiceScopeFactory>();
+         _scopeFactory.CreateScope().Returns(_scope);
+
+         _services.GetService(typeof(IServiceScopeFactory)).Returns(_scopeFactory);
+
          _loggerFactory.CreateLogger(Arg.Any<string>()).Returns(_logger);
          _sut = new StorageWrapper<IDataProtectionStorage>(_services, _loggerFactory);
      }
      [Fact]
-     public void Constructo_ContextIsNull_ThrowException()
+     public void Constructor_AllArgumentsNull_ThrowArgumentNullException()
      {
          Assert.Throws<ArgumentNullException>(() => new StorageWrapper<IDataProtectionStorage>(null!, null!));
      }
@@ -211,5 +215,41 @@ public class StorageWrapperTests
         loggerFactory.Entries.Should().ContainSingle(e => e.Level == LogLevel.Error)
             .Which.Should().Match<LogEntry>(e => e.EventId.Name == "SkippingMalformedKey" && e.Contains(MalformedFriendlyName));
         loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
+    }
+
+    [Fact]
+    public void GetAllElements_EmptyStorage_ReturnsEmpty()
+    {
+        _storage.GetAll().Returns([]);
+
+        _sut.GetAllElements().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetAllElements_StoredKeys_ReturnsParsedElementsInStorageOrder()
+    {
+        var first = new XElement("key", new XAttribute("id", "1"), new XElement("masterKey", "first"));
+        var second = new XElement("key", new XAttribute("id", "2"), new XElement("masterKey", "second"));
+        _storage.GetAll().Returns([
+            new DataProtectionKey { FriendlyName = "first", Xml = first.ToString(SaveOptions.DisableFormatting) },
+            new DataProtectionKey { FriendlyName = null, Xml = second.ToString() }
+        ]);
+
+        var elements = _sut.GetAllElements();
+
+        elements.Select(e => e.ToString()).Should().Equal(first.ToString(), second.ToString());
+    }
+
+    [Fact]
+    public void GetAllElements_EachCall_ResolvesStorageFromNewScopeAndDisposesIt()
+    {
+        _storage.GetAll().Returns([]);
+
+        _sut.GetAllElements();
+        _sut.GetAllElements();
+
+        _scopeFactory.Received(2).CreateScope();
+        _scope.Received(2).Dispose();
+        _storage.Received(2).GetAll();
     }
 }

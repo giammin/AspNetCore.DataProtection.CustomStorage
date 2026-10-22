@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using AspNetCore.DataProtection.CustomStorage.Dapper;
 using AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL;
+using Dapper;
 using FluentAssertions;
+using Microsoft.Extensions.Options;
 using Npgsql;
+using NSubstitute;
 using Xunit;
 
 namespace AspNetCore.DataProtection.CustomStorage.Tests.PostgreSQL;
@@ -55,14 +59,19 @@ public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlCo
     [InlineData("","xml1")]
     [InlineData("   ", "xml2")]
     [InlineData(null, "xml3")]
-    public void Insert_FriendlyNameIsNullOrEmptyString_PersistsData(string? friendlyName, string xml)
+    public async Task Insert_FriendlyNameIsNullOrEmptyString_PersistsData(string? friendlyName, string xml)
     {
+        await _fixture.ResetDatabaseAsync();
         var key = new DataProtectionKey
         {
             FriendlyName = friendlyName,
             Xml = xml
         };
         _sut.Insert(key);
+
+        var stored = _sut.GetAll().Should().ContainSingle().Subject;
+        stored.FriendlyName.Should().Be(friendlyName);
+        stored.Xml.Should().Be(xml);
     }
     [Fact]
     public async Task GetAll_NoKeys_ReturnsEmpty()
@@ -92,5 +101,30 @@ public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlCo
             .And.Contain(x => x.FriendlyName == null && x.Xml == unnamed.Xml)
             .And.OnlyContain(x => x.Id > 0 && x.InsertDate != default);
         entities.Select(x => x.Id).Should().OnlyHaveUniqueItems();
+    }
+
+    [Fact]
+    public void InitializeDb_CustomSchemaAndTable_PersistsKeysInConfiguredTable()
+    {
+        const string schemaName = "custom_keys";
+        var tableName = $"keys_{Guid.NewGuid().ToString("N")[..12]}";
+        using (var connection = _fixture.NpgsqlDataSource.OpenConnection())
+        {
+            connection.Execute($"CREATE SCHEMA IF NOT EXISTS {schemaName};");
+        }
+        var options = Substitute.For<IOptionsSnapshot<DapperDataProtectionConfig>>();
+        options.Value.Returns(new DapperDataProtectionConfig { SchemaName = schemaName, TableName = tableName });
+        var sut = new PostgreSQLDataProtectionRepository(_fixture.NpgsqlDataSource, options);
+        var key = new DataProtectionKey { FriendlyName = "CustomSchemaKey", Xml = "Xml" };
+
+        sut.InitializeDb();
+        sut.Insert(key);
+
+        sut.GetAll().Should().ContainSingle(x => x.FriendlyName == key.FriendlyName && x.Xml == key.Xml);
+        using (var connection = _fixture.NpgsqlDataSource.OpenConnection())
+        {
+            connection.ExecuteScalar<long>($"SELECT COUNT(*) FROM {schemaName}.{tableName};").Should().Be(1);
+        }
+        _sut.GetAll().Should().NotContain(x => x.FriendlyName == key.FriendlyName);
     }
 }
