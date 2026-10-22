@@ -75,8 +75,11 @@ Single test project: `tests/AspNetCore.DataProtection.CustomStorage.Tests` (xUni
 ### CI/CD (`.github/workflows`)
 
 - `build.yml`: push to `main` and PRs: restore, build (Release), test.
-- `nuget-publish.yml`: on `v*` tags, builds with `-p:Version=${tag without v}`, tests, obtains a short-lived key via NuGet trusted publishing (`NuGet/login`, OIDC, `NUGET_USER` secret) and pushes `./build/*.nupkg`.
-- `github-release.yml`: creates a GitHub release on `v*` tags (`marvinpinto/action-automatic-releases`), with a changelog generated from the Conventional Commit messages on `main` since the previous tag.
+- `nuget-publish.yml`: on `v*` tags, two jobs:
+  - `build`: builds with `-p:Version=${tag without v}`, tests, obtains a short-lived key via NuGet trusted publishing (`NuGet/login`, OIDC, `NUGET_USER` secret) and pushes `./build/*.nupkg`.
+  - `release` (`needs: build`, so it runs only after a successful publish): generates the changelog with an inline shell script that groups the commit subjects since the previous `v*` tag by Conventional Commit type (plus a "Breaking Changes" section for `!` or a `BREAKING CHANGE:` footer), then runs `gh release create`.
+- Every action is pinned to a full commit SHA with the version as a trailing comment (`uses: owner/repo@<sha> # vX.Y.Z`). Keep that format when updating an action.
+- Workflows declare least-privilege `permissions:` explicitly.
 
 ## Commits and Pull Requests
 

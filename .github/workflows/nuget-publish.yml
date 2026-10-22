@@ -8,11 +8,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       id-token: write  # enable GitHub OIDC token issuance for this job
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
       with:
         dotnet-version: 10.0.x
     - name: Restore dependencies
@@ -21,13 +22,72 @@ jobs:
       # Derive the package version from the pushed tag (e.g. v1.1.4 -> 1.1.4).
       # -p:Version is a global MSBuild property; PackageVersion, FileVersion and
       # AssemblyVersion all derive from it.
-      run: dotnet build --no-restore -c Release -p:Version=${GITHUB_REF_NAME#v}
+      run: dotnet build --no-restore -c Release -p:Version="${GITHUB_REF_NAME#v}"
     - name: Test
       run: dotnet test --no-build --verbosity normal -c Release
     - name: NuGet login (OIDC → temp API key) # Get a short-lived NuGet API key
-      uses: NuGet/login@v1
+      uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
       id: login
       with:
        user: ${{ secrets.NUGET_USER }}          
     - name: Push
       run: dotnet nuget push "./build/*.nupkg" --api-key  ${{steps.login.outputs.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
+
+  release:
+    # Create the GitHub release only after the NuGet packages were published.
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0  # full history and tags, required to find the previous tag
+        persist-credentials: false
+    - name: Generate release notes
+      # Group the commit subjects since the previous v* tag by Conventional Commit type.
+      run: |
+        set -euo pipefail
+        tag="$GITHUB_REF_NAME"
+        if prev=$(git describe --tags --abbrev=0 --match 'v*' "$tag^" 2>/dev/null); then
+          range="$prev..$tag"
+        else
+          range="$tag"
+        fi
+
+        log=$(git log --no-merges --format='%h %s' "$range")
+        breaking=$(git log --no-merges -E --grep='^BREAKING[ -]CHANGE:' --format='%h' "$range" | paste -sd'|' -)
+        types='feat|fix|perf|refactor|docs|test|build|ci|chore|revert'
+
+        section() {
+          local lines
+          lines=$(grep -E "$2" <<< "$log" || true)
+          if [ -n "$lines" ]; then
+            printf '### %s\n\n' "$1"
+            sed -E 's/^([0-9a-f]+) (.*)$/- \2 (\1)/' <<< "$lines"
+            echo
+          fi
+        }
+
+        {
+          section 'Breaking Changes' "^[0-9a-f]+ [a-z]+(\([^)]*\))?!: ${breaking:+|^($breaking) }"
+          section 'Features' '^[0-9a-f]+ feat(\([^)]*\))?!?: '
+          section 'Bug Fixes' '^[0-9a-f]+ fix(\([^)]*\))?!?: '
+          section 'Performance Improvements' '^[0-9a-f]+ perf(\([^)]*\))?!?: '
+          section 'Refactoring' '^[0-9a-f]+ refactor(\([^)]*\))?!?: '
+          section 'Documentation' '^[0-9a-f]+ docs(\([^)]*\))?!?: '
+          section 'Tests' '^[0-9a-f]+ test(\([^)]*\))?!?: '
+          section 'Build System' '^[0-9a-f]+ build(\([^)]*\))?!?: '
+          section 'Continuous Integration' '^[0-9a-f]+ ci(\([^)]*\))?!?: '
+          section 'Chores' '^[0-9a-f]+ chore(\([^)]*\))?!?: '
+          section 'Reverts' '^[0-9a-f]+ revert(\([^)]*\))?!?: '
+          log=$(grep -vE "^[0-9a-f]+ ($types)(\([^)]*\))?!?: " <<< "$log" || true)
+          section 'Other Changes' '.'
+          if [ -n "${prev:-}" ]; then
+            echo "**Full Changelog**: https://github.com/$GITHUB_REPOSITORY/compare/$prev...$tag"
+          fi
+        } > release-notes.md
+    - name: Create GitHub release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file release-notes.md
