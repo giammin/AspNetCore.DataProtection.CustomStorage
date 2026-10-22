@@ -204,7 +204,8 @@ public class MyDataProtectionStorage : IDataProtectionStorage
 
 `DataProtectionKey` carries the two values the key ring needs:
 
-- `FriendlyName` (`string?`) — a name that must be unique when it is not `null`.
+- `FriendlyName` (`string?`) — a name that must be unique when it is not `null`. Names are trimmed,
+  and an empty or whitespace-only name is passed to `Insert` as `null`.
 - `Xml` (`string`, required) — the serialized key.
 
 Register your implementation in DI and wire it up:
@@ -222,14 +223,20 @@ it is wrapped in a `KeyInsertException`.
 
 ## How it works
 
-`PersistKeysToStorage<TStorage>()` registers a `StorageWrapper<TStorage>` as the Data Protection
-`IXmlRepository`. The wrapper adapts the framework's XML-element calls to the simpler
+`PersistKeysToStorage<TStorage>()` registers an internal `IXmlRepository` adapter as the Data
+Protection key repository. The adapter maps the framework's XML-element calls to the simpler
 `IDataProtectionStorage` contract (`GetAll()` / `Insert()`), resolving `TStorage` from a scoped
 service provider for every operation.
 
+When the key ring is loaded, a stored key whose XML is malformed is skipped and logged as an error
+(event `SkippingMalformedKey`, with the friendly name and the parse position; the XML itself is never
+logged). The remaining keys stay usable, but data protected with the skipped key can no longer be
+unprotected, and if no valid key remains, Data Protection generates a new one.
+
 The database providers add a Dapper layer (`IDbDataProtectionStorage`) on top of that contract,
 implementing the raw SQL for SQL Server and PostgreSQL, plus schema initialization
-(`InitializeDb()`) and an async read path (`GetAllAsync()`).
+(`InitializeDb()`) and an async read path (`GetAllAsync()`) that returns the stored
+`DataProtectionKeyEntity` rows, including `Id` and `InsertDate`, for tooling such as key auditing.
 
 ## Contributing
 

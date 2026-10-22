@@ -45,7 +45,8 @@ ASP.NET Core Data Protection (IXmlRepository)
 ### Wiring
 
 - **Core:** `PersistKeysToStorage<TStorage>()` registers a singleton `IConfigureOptions<KeyManagementOptions>` that sets `XmlRepository` to a `StorageWrapper<TStorage>`. It does **not** register `TStorage`; the caller must.
-- `StorageWrapper` creates a new DI scope and resolves `TStorage` on every `GetAllElements` / `StoreElement` call, so scoped storage implementations work. It trims `FriendlyName` and wraps any `Insert` exception in `KeyInsertException`.
+- `StorageWrapper` (internal) creates a new DI scope and resolves `TStorage` on every `GetAllElements` / `StoreElement` call, so scoped storage implementations work. It trims `FriendlyName`, normalizes empty or whitespace-only names to `null`, and wraps any `Insert` exception in `KeyInsertException`. `GetAllElements` logs and skips rows with malformed XML (`SkippingMalformedKey`) instead of failing the whole key ring.
+- Never log or expose key XML (it may contain unencrypted key material); this includes `XmlException` messages, which can quote the input.
 - **DB providers:** `PersistKeysWithDapperInSqlServer(...)` / `PersistKeysWithDapperInPostgreSQL(...)` configure `IOptions<DapperDataProtectionConfig>`, register the connection source as a singleton (`SqlConnectionFactory` / `NpgsqlDataSource`), register the repository as scoped `IDbDataProtectionStorage`, then call `PersistKeysToStorage<IDbDataProtectionStorage>()`.
 - `IServiceProvider.UseDapperDataProtection()` (in the shared Dapper project) must be called at startup. It resolves the registrations and runs `InitializeDb()` when `DapperDataProtectionConfig.InitializeTable` is `true` (the default).
 

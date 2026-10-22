@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer;
 using FluentAssertions;
@@ -64,9 +65,32 @@ public class SqlServerDataProtectionRepositoryTests : IClassFixture<SqlServerCon
         _sut.Insert(key);
     }
     [Fact]
-    public async Task GetAllAsync_NoKeys_ReturnsEmpty()
+    public async Task GetAll_NoKeys_ReturnsEmpty()
     {
         await _fixture.ResetDatabaseAsync();
         _sut.GetAll().Should().BeEmpty();
+    }
+    [Fact]
+    public async Task GetAllAsync_NoKeys_ReturnsEmpty()
+    {
+        await _fixture.ResetDatabaseAsync();
+        (await _sut.GetAllAsync()).Should().BeEmpty();
+    }
+    [Fact]
+    public async Task GetAllAsync_KeysInserted_ReturnsEntitiesWithIdAndInsertDate()
+    {
+        await _fixture.ResetDatabaseAsync();
+        var named = new DataProtectionKey { FriendlyName = "GetAllAsyncNamed", Xml = "xml1" };
+        var unnamed = new DataProtectionKey { FriendlyName = null, Xml = "xml2" };
+        _sut.Insert(named);
+        _sut.Insert(unnamed);
+
+        var entities = (await _sut.GetAllAsync()).ToList();
+
+        entities.Should().HaveCount(2)
+            .And.Contain(x => x.FriendlyName == named.FriendlyName && x.Xml == named.Xml)
+            .And.Contain(x => x.FriendlyName == null && x.Xml == unnamed.Xml)
+            .And.OnlyContain(x => x.Id > 0 && x.InsertDate != default);
+        entities.Select(x => x.Id).Should().OnlyHaveUniqueItems();
     }
 }
