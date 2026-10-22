@@ -10,10 +10,15 @@ using Testcontainers.MsSql;
 using Xunit;
 using Constants = AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer.Constants;
 
-// One container for the whole assembly: tests that do not use the default table work on their own tables.
-[assembly: AssemblyFixture(typeof(AspNetCore.DataProtection.CustomStorage.Tests.SQLServer.SqlServerContainerFixture))]
-
 namespace AspNetCore.DataProtection.CustomStorage.Tests.SQLServer;
+
+/// <summary>
+/// Shares one container among the SQLServer test classes. A collection fixture, unlike an assembly fixture,
+/// is created only when tests of the collection are selected, so unit-only runs do not need Docker.
+/// Tests that do not use the default table work on their own tables.
+/// </summary>
+[CollectionDefinition(nameof(SqlServerCollection))]
+public class SqlServerCollection : ICollectionFixture<SqlServerContainerFixture>;
 public class SqlServerContainerFixture : IAsyncLifetime
 {
     private readonly MsSqlContainer _dbContainer = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-CU27-GDR1-ubuntu-22.04")
@@ -26,6 +31,11 @@ public class SqlServerContainerFixture : IAsyncLifetime
             Substitute.For<IOptionsSnapshot<DapperDataProtectionConfig>>();
 
     private Respawner _respawner = null!;
+
+    /// <summary>
+    /// Returns a unique table name, for tests that must not share the default table.
+    /// </summary>
+    public static string NewTableName() => $"Keys_{Guid.NewGuid():N}";
 
     public SqlServerContainerFixture()
     {
