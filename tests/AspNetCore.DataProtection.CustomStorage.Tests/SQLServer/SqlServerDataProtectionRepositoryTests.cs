@@ -104,6 +104,77 @@ public class SqlServerDataProtectionRepositoryTests : IClassFixture<SqlServerCon
     }
 
     [Fact]
+    public void Delete_NullKeys_ThrowsArgumentNullException()
+    {
+        _sut.Invoking(x => x.Delete(null!))
+            .Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public async Task Delete_KeysReturnedByGetAll_DeletesOnlyThoseKeys()
+    {
+        await _fixture.ResetDatabaseAsync();
+        _sut.Insert(new DataProtectionKey { FriendlyName = "DeleteKept", Xml = "xml1" });
+        _sut.Insert(new DataProtectionKey { FriendlyName = "DeleteRemoved", Xml = "xml2" });
+        _sut.Insert(new DataProtectionKey { FriendlyName = null, Xml = "xml3" });
+        var keysToDelete = _sut.GetAll().Where(x => x.FriendlyName != "DeleteKept").ToList();
+
+        _sut.Delete(keysToDelete);
+
+        _sut.GetAll().Should().ContainSingle()
+            .Which.FriendlyName.Should().Be("DeleteKept");
+    }
+
+    [Fact]
+    public async Task Delete_KeyNotReturnedByGetAll_ThrowsArgumentExceptionAndDeletesNothing()
+    {
+        await _fixture.ResetDatabaseAsync();
+        _sut.Insert(new DataProtectionKey { FriendlyName = "DeleteKept", Xml = "xml1" });
+        var stored = _sut.GetAll().Single();
+
+        _sut.Invoking(x => x.Delete([stored, new DataProtectionKey { FriendlyName = "DeleteKept", Xml = "xml1" }]))
+            .Should().Throw<ArgumentException>();
+
+        _sut.GetAll().Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task Delete_KeyAlreadyDeleted_Succeeds()
+    {
+        await _fixture.ResetDatabaseAsync();
+        _sut.Insert(new DataProtectionKey { FriendlyName = "DeleteTwice", Xml = "xml1" });
+        var stored = _sut.GetAll().ToList();
+        _sut.Delete(stored);
+
+        _sut.Invoking(x => x.Delete(stored)).Should().NotThrow();
+    }
+
+    [Fact]
+    public void Delete_LaterDeletionFails_RollsBackEarlierDeletions()
+    {
+        var tableName = NewTableName();
+        var sut = CreateSut(tableName);
+        sut.InitializeDb();
+        sut.Insert(new DataProtectionKey { FriendlyName = "DeleteFirst", Xml = "xml1" });
+        sut.Insert(new DataProtectionKey { FriendlyName = "DeleteFails", Xml = "xml2" });
+        using (var connection = _fixture.SqlConnectionFactory.CreateConnection())
+        {
+            connection.Execute(
+                $"""
+                 CREATE TRIGGER [{Constants.DefaultSchema}].[TR_{tableName}_FailDelete]
+                 ON [{Constants.DefaultSchema}].[{tableName}] AFTER DELETE AS
+                 IF EXISTS(SELECT 1 FROM deleted WHERE [FriendlyName] = N'DeleteFails')
+                     THROW 50000, N'delete failed', 1;
+                 """);
+        }
+        var keys = sut.GetAll().OrderBy(x => x.FriendlyName == "DeleteFails").ToList();
+
+        sut.Invoking(x => x.Delete(keys)).Should().Throw<SqlException>().WithMessage("*delete failed*");
+
+        sut.GetAll().Select(x => x.FriendlyName).Should().BeEquivalentTo("DeleteFirst", "DeleteFails");
+    }
+
+    [Fact]
     public void InitializeDb_TableExistsWithoutIndex_CreatesIndex()
     {
         var tableName = NewTableName();

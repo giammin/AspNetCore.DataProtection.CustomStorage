@@ -38,7 +38,9 @@ dotnet test --no-build -c Release --filter-method "*.StorageWrapperTests.StoreEl
 ```
 ASP.NET Core Data Protection (IXmlRepository)
     └── StorageWrapper<TStorage>         [Core: bridges IXmlRepository <-> IDataProtectionStorage]
+        (DeletableStorageWrapper<TStorage> also bridges IDeletableXmlRepository <-> IDeletableDataProtectionStorage)
             └── IDataProtectionStorage   [Core: GetAll() / Insert()]
+                └── IDeletableDataProtectionStorage  [Core: adds Delete()]
                     └── IDbDataProtectionStorage  [Dapper: adds InitializeDb() / GetAllAsync()]
                             ├── SQLServerDataProtectionRepository   [Dapper.SQLServer]
                             └── PostgreSQLDataProtectionRepository  [Dapper.PostgreSQL]
@@ -46,7 +48,8 @@ ASP.NET Core Data Protection (IXmlRepository)
 
 ### Wiring
 
-- **Core:** `PersistKeysToStorage<TStorage>()` registers a singleton `IConfigureOptions<KeyManagementOptions>` that sets `XmlRepository` to a `StorageWrapper<TStorage>`. It does **not** register `TStorage`; the caller must.
+- **Core:** `PersistKeysToStorage<TStorage>()` registers a singleton `IConfigureOptions<KeyManagementOptions>` that sets `XmlRepository` to a `StorageWrapper<TStorage>`, or to a `DeletableStorageWrapper<TStorage>` when `TStorage` is assignable to `IDeletableDataProtectionStorage` (so `XmlKeyManager.CanDeleteKeys` reflects the storage). It does **not** register `TStorage`; the caller must.
+- `DeletableStorageWrapper.DeleteElements` offers the parsed keys (malformed rows skipped), then passes the chosen `GetAll()` instances, ordered by `DeletionOrder`, to a single `Delete()` call. A storage exception is logged (`ErrorDeletingKeysFromStorage`) and returns `false`. Note: in ASP.NET Core 10.0, `XmlKeyManager` exposes `DeleteKeys` but does not implement `IDeletableKeyManager`.
 - `StorageWrapper` (internal) creates a new DI scope and resolves `TStorage` on every `GetAllElements` / `StoreElement` call, so scoped storage implementations work. It trims `FriendlyName`, normalizes empty or whitespace-only names to `null`, and wraps any `Insert` exception in `KeyInsertException`. `GetAllElements` logs and skips rows with malformed XML (`SkippingMalformedKey`) instead of failing the whole key ring.
 - Never log or expose key XML (it may contain unencrypted key material); this includes `XmlException` messages, which can quote the input.
 - **DB providers:** `PersistKeysWithDapperInSqlServer(...)` / `PersistKeysWithDapperInPostgreSQL(...)` configure `IOptions<DapperDataProtectionConfig>`, register the connection source as a singleton (`SqlConnectionFactory` / `NpgsqlDataSource`), register the repository as scoped `IDbDataProtectionStorage`, then call `PersistKeysToStorage<IDbDataProtectionStorage>()`.
@@ -63,6 +66,7 @@ Both repositories use raw SQL via Dapper. They differ in naming conventions:
 | Unique index on friendly name | Filtered NONCLUSTERED (`WHERE ... IS NOT NULL`) | `CREATE UNIQUE INDEX IF NOT EXISTS` (NULLs allowed) |
 
 - The PostgreSQL provider sets the global `Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true` so snake_case columns map to `DataProtectionKeyEntity`. This affects the whole host process (documented in the README).
+- `Delete()` requires `DataProtectionKeyEntity` instances (as returned by `GetAll()`) and deletes by `Id`, row by row in order, in one transaction.
 - Schema and table names are interpolated directly into SQL strings, not parameterized or validated.
 - Defaults are in each provider's `Constants.cs`. Keep the table DDL in sync with the "Database schema" section of `README.md`.
 
@@ -70,9 +74,9 @@ Both repositories use raw SQL via Dapper. They differ in naming conventions:
 
 Single test project: `tests/AspNetCore.DataProtection.CustomStorage.Tests` (xUnit v3, FluentAssertions, NSubstitute, Bogus).
 
-- `StorageWrapperTests` and `DapperDataProtectionExtensionsTests` are pure unit tests.
+- `StorageWrapperTests`, `DeletableStorageWrapperTests` and `DapperDataProtectionExtensionsTests` are pure unit tests. `DataProtectionStorageExtensionsTests` runs the real DI container and `XmlKeyManager` against in-memory storages.
 - `SQLServer/` and `PostgreSQL/` tests use an `IClassFixture` (`*ContainerFixture`) that starts a Testcontainers database, calls `InitializeDb()` with the default config, and exposes `ResetDatabaseAsync()` (Respawn) to clear data between tests.
-- `*EndToEndTests` wire each provider through the public extension methods and a real DI container (`AddDataProtection().PersistKeysWithDapperIn...()`, `UseDapperDataProtection()`), then protect/unprotect, including across two service providers sharing one table. Each test uses its own table, so it does not depend on Respawn.
+- `*EndToEndTests` wire each provider through the public extension methods and a real DI container (`AddDataProtection().PersistKeysWithDapperIn...()`, `UseDapperDataProtection()`), then protect/unprotect, including across two service providers sharing one table, and delete keys through `XmlKeyManager.DeleteKeys`. Each test uses its own table, so it does not depend on Respawn.
 
 ### CI/CD (`.github/workflows`)
 

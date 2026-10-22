@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using AspNetCore.DataProtection.CustomStorage.Dapper;
 using AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL;
 using Dapper;
 using FluentAssertions;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -52,6 +54,23 @@ public class PostgreSqlEndToEndTests : IClassFixture<PostgreSqlContainerFixture>
         second.GetRequiredService<IDataProtectionProvider>()
             .CreateProtector(Purpose).Unprotect(protectedPayload).Should().Be("payload");
         GetStoredFriendlyNames(tableName).Should().ContainSingle();
+    }
+
+    [Fact]
+    public void DeleteKeys_KeySelected_DeletesItFromTable()
+    {
+        var tableName = NewTableName();
+        using var services = BuildServiceProvider(tableName);
+        // XmlKeyManager exposes DeleteKeys but does not implement IDeletableKeyManager.
+        var keyManager = (XmlKeyManager)services.GetRequiredService<IKeyManager>();
+        var now = DateTimeOffset.UtcNow;
+        var kept = keyManager.CreateNewKey(now, now.AddDays(90));
+        var deleted = keyManager.CreateNewKey(now, now.AddDays(90));
+
+        keyManager.DeleteKeys(key => key.KeyId == deleted.KeyId).Should().BeTrue();
+
+        keyManager.GetAllKeys().Select(k => k.KeyId).Should().Equal(kept.KeyId);
+        GetStoredFriendlyNames(tableName).Should().Equal($"key-{kept.KeyId:D}");
     }
 
     // PostgreSQL folds unquoted identifiers to lower case; keep the name short enough for derived index names.

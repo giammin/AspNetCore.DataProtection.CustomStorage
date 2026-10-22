@@ -35,4 +35,18 @@ internal static partial class LoggingExtensions
     /// </summary>
     [LoggerMessage(5, LogLevel.Error, "Skipping key '{FriendlyName}': its XML is malformed (line {LineNumber}, position {LinePosition}).", EventName = "SkippingMalformedKey")]
     public static partial void LogSkippingMalformedKey(this ILogger logger, string? friendlyName, int lineNumber, int linePosition);
+
+    /// <summary>
+    /// Logs an information message for each key about to be deleted from storage.
+    /// The key XML is never logged because it may contain unencrypted key material.
+    /// </summary>
+    [LoggerMessage(6, LogLevel.Information, "Deleting key '{FriendlyName}' with '{storage}'.", EventName = "DeletingKeyFromStorage")]
+    public static partial void LogDeletingKeyFromStorage(this ILogger logger, string? friendlyName, string storage);
+
+    /// <summary>
+    /// Logs an error message when deleting keys from storage fails.
+    /// The key XML is never logged because it may contain unencrypted key material.
+    /// </summary>
+    [LoggerMessage(7, LogLevel.Error, "Error deleting {Count} key(s) with '{storage}'.", EventName = "ErrorDeletingKeysFromStorage")]
+    public static partial void LogErrorDeletingKeysFromStorage(this ILogger logger, Exception exception, int count, string storage);
 }
