@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.Extensions.Options;
@@ -62,6 +63,44 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
                     @{nameof(DataProtectionKeyEntity.FriendlyName)},
                     @{nameof(DataProtectionKeyEntity.Xml)})
              """, key);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The rows are deleted by <see cref="DataProtectionKeyEntity.Id"/>, in the given order, in a single transaction.
+    /// A row that no longer exists is not an error.
+    /// </remarks>
+    /// <exception cref="ArgumentException">a key is not a <see cref="DataProtectionKeyEntity"/> returned by <see cref="GetAll"/></exception>
+    public void Delete(IReadOnlyCollection<DataProtectionKey> keys)
+    {
+        var ids = GetIds(keys);
+        if (ids.Count == 0)
+        {
+            return;
+        }
+
+        using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        // Dapper executes the statement once per id, in order.
+        connection.Execute(
+            $"""
+             DELETE FROM [{_config.SchemaName}].[{_config.TableName}]
+             WHERE [{nameof(DataProtectionKeyEntity.Id)}] = @{nameof(DataProtectionKeyEntity.Id)}
+             """,
+            ids.Select(id => new { Id = id }),
+            transaction);
+        transaction.Commit();
+    }
+
+    private static List<int> GetIds(IReadOnlyCollection<DataProtectionKey> keys)
+    {
+        ArgumentNullException.ThrowIfNull(keys);
+        return keys
+            .Select(key => key as DataProtectionKeyEntity ?? throw new ArgumentException(
+                $"Every key must be a {nameof(DataProtectionKeyEntity)} returned by {nameof(GetAll)}.", nameof(keys)))
+            .Select(entity => entity.Id)
+            .ToList();
     }
 
     /// <inheritdoc />

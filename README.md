@@ -33,6 +33,7 @@ The base package lets you plug any backend into the Data Protection key ring by 
 - [Configuration](#configuration)
 - [Database schema](#database-schema)
 - [Custom storage backend](#custom-storage-backend)
+- [Deleting keys](#deleting-keys)
 - [How it works](#how-it-works)
 - [Contributing](#contributing)
 - [License](#license)
@@ -224,20 +225,71 @@ builder.Services.AddDataProtection()
 on each read/write, so you must register it yourself (any lifetime works). If an `Insert` throws,
 it is wrapped in a `KeyInsertException`.
 
+To support [key deletion](#deleting-keys), implement `IDeletableDataProtectionStorage` instead:
+
+```csharp
+public class MyDataProtectionStorage : IDeletableDataProtectionStorage
+{
+    // GetAll() and Insert() as above
+
+    public void Delete(IReadOnlyCollection<DataProtectionKey> keys)
+    {
+        // delete every key, in the given order, or none of them (throw on failure)
+    }
+}
+```
+
+The keys passed to `Delete` are instances previously returned by `GetAll()` on the same storage
+instance, so a backend can return a derived record that carries its own identifier (as the Dapper
+providers do with `DataProtectionKeyEntity.Id`) and use it to locate the rows to delete.
+
+## Deleting keys
+
+Deleting a key makes the data it protected permanently unreadable; Microsoft
+[recommends not deleting keys](https://learn.microsoft.com/aspnet/core/security/data-protection/configuration/default-settings#delete-keys)
+except in exceptional cases. When the storage supports it (both database providers do, as does any
+`IDeletableDataProtectionStorage`), old keys can be deleted through the key manager:
+
+```csharp
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+
+var keyManager = app.Services.GetRequiredService<IKeyManager>();
+if (keyManager is XmlKeyManager { CanDeleteKeys: true } xmlKeyManager)
+{
+    var yearAgo = DateTimeOffset.UtcNow.AddYears(-1);
+    if (!xmlKeyManager.DeleteKeys(key => key.ExpirationDate < yearAgo))
+    {
+        // the deletion failed and no key was deleted; see the ErrorDeletingKeysFromStorage log entry
+    }
+}
+```
+
+> **Note:** in ASP.NET Core 10.0, `XmlKeyManager` exposes `CanDeleteKeys` and `DeleteKeys` but does
+> not implement `IDeletableKeyManager`, so a `keyManager is IDeletableKeyManager` check is `false`
+> even when deletion is supported.
+
+The selected keys are deleted with a single `Delete` call. The database providers delete the rows
+by `Id`, in deletion order, in one transaction: either every selected key is deleted or none is.
+If the storage throws, the error is logged (event `ErrorDeletingKeysFromStorage`) and `DeleteKeys`
+returns `false`. Each deleted key is logged by friendly name (event `DeletingKeyFromStorage`); the
+key XML is never logged. A stored key whose XML is malformed is not offered for deletion.
+
 ## How it works
 
 `PersistKeysToStorage<TStorage>()` registers an internal `IXmlRepository` adapter as the Data
 Protection key repository. The adapter maps the framework's XML-element calls to the simpler
 `IDataProtectionStorage` contract (`GetAll()` / `Insert()`), resolving `TStorage` from a scoped
-service provider for every operation.
+service provider for every operation. When `TStorage` implements `IDeletableDataProtectionStorage`,
+the adapter also implements the framework's `IDeletableXmlRepository` and maps deletions to `Delete()`.
 
 When the key ring is loaded, a stored key whose XML is malformed is skipped and logged as an error
 (event `SkippingMalformedKey`, with the friendly name and the parse position; the XML itself is never
 logged). The remaining keys stay usable, but data protected with the skipped key can no longer be
 unprotected, and if no valid key remains, Data Protection generates a new one.
 
-The database providers add a Dapper layer (`IDbDataProtectionStorage`) on top of that contract,
-implementing the raw SQL for SQL Server and PostgreSQL, plus schema initialization
+The database providers add a Dapper layer (`IDbDataProtectionStorage`, which extends
+`IDeletableDataProtectionStorage`) on top of that contract,
+implementing the raw SQL for SQL Server and PostgreSQL, plus key deletion, schema initialization
 (`InitializeDb()`) and an async read path (`GetAllAsync()`) that returns the stored
 `DataProtectionKeyEntity` rows, including `Id` and `InsertDate`, for tooling such as key auditing.
 

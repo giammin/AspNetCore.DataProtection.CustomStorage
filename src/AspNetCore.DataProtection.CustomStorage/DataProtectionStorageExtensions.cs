@@ -13,7 +13,9 @@ namespace AspNetCore.DataProtection.CustomStorage;
 public static class DataProtectionStorageExtensions
 {
     /// <summary>
-    /// Configures the data protection system to persist keys to a custom storage
+    /// Configures the data protection system to persist keys to a custom storage.
+    /// When <typeparamref name="TStorage"/> implements <see cref="IDeletableDataProtectionStorage"/>,
+    /// keys can also be deleted through <see cref="XmlKeyManager.DeleteKeys"/>.
     /// </summary>
     /// <param name="builder">The <see cref="IDataProtectionBuilder"/> instance to modify.</param>
     /// <returns>The value <paramref name="builder"/>.</returns>
@@ -25,7 +27,9 @@ public static class DataProtectionStorageExtensions
             var loggerFactory = services.GetService<ILoggerFactory>() ?? NullLoggerFactory.Instance;
             return new ConfigureOptions<KeyManagementOptions>(options =>
             {
-                options.XmlRepository = new StorageWrapper<TStorage>(services, loggerFactory);
+                options.XmlRepository = typeof(TStorage).IsAssignableTo(typeof(IDeletableDataProtectionStorage))
+                    ? new DeletableStorageWrapper<TStorage>(services, loggerFactory)
+                    : new StorageWrapper<TStorage>(services, loggerFactory);
             });
         });
 
