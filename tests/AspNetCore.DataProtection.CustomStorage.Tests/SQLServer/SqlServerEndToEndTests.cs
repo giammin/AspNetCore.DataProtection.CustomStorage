@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AspNetCore.DataProtection.CustomStorage.Dapper;
@@ -74,25 +74,41 @@ public class SqlServerEndToEndTests : IClassFixture<SqlServerContainerFixture>
         GetStoredFriendlyNames(tableName).Should().Equal($"key-{kept.KeyId:D}");
     }
 
+    [Fact]
+    public void Protect_MissingCustomSchemaAndReservedWordTable_StoresKeysInConfiguredTable()
+    {
+        var schemaName = $"Schema_{Guid.NewGuid():N}";
+        using var services = BuildServiceProvider("Order", schemaName);
+        var protector = services.GetRequiredService<IDataProtectionProvider>().CreateProtector(Purpose);
+
+        protector.Unprotect(protector.Protect("payload")).Should().Be("payload");
+
+        GetStoredFriendlyNames("Order", schemaName).Should().ContainSingle();
+    }
+
     private static string NewTableName() => $"Keys_{Guid.NewGuid():N}";
 
-    private ServiceProvider BuildServiceProvider(string tableName)
+    private ServiceProvider BuildServiceProvider(string tableName, string schemaName = Constants.DefaultSchema)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance);
         services.AddDataProtection()
             .SetApplicationName(ApplicationName)
-            .PersistKeysWithDapperInSqlServer(_fixture.ConnectionString, config => config.TableName = tableName);
+            .PersistKeysWithDapperInSqlServer(_fixture.ConnectionString, config =>
+            {
+                config.SchemaName = schemaName;
+                config.TableName = tableName;
+            });
 
         var provider = services.BuildServiceProvider();
         provider.UseDapperDataProtection();
         return provider;
     }
 
-    private List<string?> GetStoredFriendlyNames(string tableName)
+    private List<string?> GetStoredFriendlyNames(string tableName, string schemaName = Constants.DefaultSchema)
     {
         using var connection = _fixture.SqlConnectionFactory.CreateConnection();
         return connection.Query<string?>(
-            $"SELECT [{nameof(DataProtectionKeyEntity.FriendlyName)}] FROM [{Constants.DefaultSchema}].[{tableName}];").AsList();
+            $"SELECT [{nameof(DataProtectionKeyEntity.FriendlyName)}] FROM [{schemaName}].[{tableName}];").AsList();
     }
 }

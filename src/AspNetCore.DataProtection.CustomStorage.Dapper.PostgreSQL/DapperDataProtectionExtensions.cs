@@ -1,6 +1,8 @@
 ﻿using System;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL;
@@ -30,12 +32,16 @@ public static class DapperDataProtectionExtensions
             TableName = Constants.TableName
         };
         configAction?.Invoke(config);
-        builder.Services.Configure<DapperDataProtectionConfig>(c =>
-        {
-            c.InitializeTable = config.InitializeTable;
-            c.SchemaName = config.SchemaName;
-            c.TableName = config.TableName;
-        });
+        builder.Services.AddOptions<DapperDataProtectionConfig>()
+            .Configure(c =>
+            {
+                c.InitializeTable = config.InitializeTable;
+                c.SchemaName = config.SchemaName;
+                c.TableName = config.TableName;
+            })
+            .ValidateOnStart();
+        builder.Services.TryAddEnumerable(ServiceDescriptor
+            .Singleton<IValidateOptions<DapperDataProtectionConfig>, DapperDataProtectionConfigValidator>());
         
         // Keyed, so that a data source registered by the application is neither replaced nor used;
         // created by a factory, so that the container owns and disposes it.

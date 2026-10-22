@@ -307,6 +307,20 @@ public class SqlServerDataProtectionRepositoryTests : IClassFixture<SqlServerCon
         }
     }
 
+    [Fact]
+    public void InitializeDb_SchemaMissing_CreatesSchemaAndTable()
+    {
+        var schemaName = $"Schema_{Guid.NewGuid():N}";
+        var tableName = NewTableName();
+        var sut = CreateSut(tableName, schemaName);
+
+        sut.InitializeDb();
+        sut.Insert(new DataProtectionKey { FriendlyName = "MissingSchemaKey", Xml = "Xml" });
+
+        CountRows(schemaName, tableName).Should().Be(1);
+        sut.Invoking(x => x.InitializeDb()).Should().NotThrow();
+    }
+
     private static string NewTableName() => $"Keys_{Guid.NewGuid():N}";
 
     private SQLServerDataProtectionRepository CreateSut(string tableName, string schemaName = Constants.DefaultSchema)

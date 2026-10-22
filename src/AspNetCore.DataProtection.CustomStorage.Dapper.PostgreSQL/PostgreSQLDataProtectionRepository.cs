@@ -16,6 +16,7 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
     private const string InitializeDbLockName = "AspNetCore.DataProtection.CustomStorage.InitializeDb";
     private readonly NpgsqlDataSource _dataSource;
     private readonly DapperDataProtectionConfig _config;
+    private readonly string _tableName;
     private string GetAllQuery() => 
     $"""
         SELECT
@@ -23,7 +24,7 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
             insert_date AS "{nameof(DataProtectionKeyEntity.InsertDate)}",
             friendly_name AS "{nameof(DataProtectionKeyEntity.FriendlyName)}",
             xml AS "{nameof(DataProtectionKeyEntity.Xml)}"
-        FROM {_config.SchemaName}.{_config.TableName};
+        FROM {_tableName};
     """;
 
     /// <summary>
@@ -36,6 +37,7 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
     {
         _dataSource = dataSource;
         _config = options.Value;
+        _tableName = $"{QuoteIdentifier(_config.SchemaName)}.{QuoteIdentifier(_config.TableName)}";
     }
 
     /// <inheritdoc />
@@ -59,7 +61,7 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
         using var connection = _dataSource.CreateConnection();
         connection.Execute(
             $"""
-             INSERT INTO {_config.SchemaName}.{_config.TableName}(
+             INSERT INTO {_tableName}(
                 friendly_name,
                 xml) 
              VALUES (
@@ -88,7 +90,7 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
         // Dapper executes the statement once per id, in order.
         connection.Execute(
             $"""
-             DELETE FROM {_config.SchemaName}.{_config.TableName}
+             DELETE FROM {_tableName}
              WHERE id = @{nameof(DataProtectionKeyEntity.Id)}
              """,
             ids.Select(id => new { Id = id }),
@@ -108,6 +110,7 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
 
     /// <inheritdoc />
     /// <remarks>
+    /// Creates the schema, the table and the friendly-name unique index, each one only if it is missing.
     /// Safe to call concurrently from several instances: the initialization is serialized
     /// with a transaction-level advisory lock.
     /// </remarks>
@@ -117,25 +120,39 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
         using var transaction = connection.BeginTransaction();
         // Without the lock, concurrent IF NOT EXISTS statements can all create the same relation
         // and fail with a unique violation in the system catalogs.
-        connection.Execute($"""
-             SELECT pg_advisory_xact_lock(hashtext(@LockName));
+        connection.Execute("SELECT pg_advisory_xact_lock(hashtext(@LockName));",
+            new { LockName = InitializeDbLockName },
+            transaction);
+        // CREATE SCHEMA IF NOT EXISTS requires the CREATE privilege on the database even when the schema
+        // exists, so it is executed only when the schema is missing.
+        var schemaExists = connection.ExecuteScalar<bool>(
+            "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = @SchemaName);",
+            new { _config.SchemaName },
+            transaction);
+        if (!schemaExists)
+        {
+            connection.Execute($"CREATE SCHEMA IF NOT EXISTS {QuoteIdentifier(_config.SchemaName)};",
+                transaction: transaction);
+        }
 
-             CREATE TABLE IF NOT EXISTS {_config.SchemaName}.{_config.TableName}
+        connection.Execute($"""
+             CREATE TABLE IF NOT EXISTS {_tableName}
               (
                  id INTEGER generated always as identity,
                  insert_date timestamp with time zone NOT NULL default NOW(),
                  friendly_name character varying(256) COLLATE pg_catalog."default" NULL,
                  xml text COLLATE pg_catalog."default" NOT NULL,
-                 CONSTRAINT pk_{_config.SchemaName}_{_config.TableName} PRIMARY KEY (id)
+                 CONSTRAINT {QuoteIdentifier($"pk_{_config.SchemaName}_{_config.TableName}")} PRIMARY KEY (id)
               );
                
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_{_config.SchemaName}_{_config.TableName}_friendly_name
-              ON {_config.SchemaName}.{_config.TableName} USING btree
+              CREATE UNIQUE INDEX IF NOT EXISTS {QuoteIdentifier($"ix_{_config.SchemaName}_{_config.TableName}_friendly_name")}
+              ON {_tableName} USING btree
               (friendly_name COLLATE pg_catalog."default" ASC NULLS LAST)
               TABLESPACE pg_default;
              """,
-            new { LockName = InitializeDbLockName },
-            transaction);
+            transaction: transaction);
         transaction.Commit();
     }
+
+    private static string QuoteIdentifier(string name) => $"\"{name.Replace("\"", "\"\"")}\"";
 }

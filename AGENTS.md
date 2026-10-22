@@ -52,8 +52,8 @@ ASP.NET Core Data Protection (IXmlRepository)
 - `DeletableStorageWrapper.DeleteElements` offers the parsed keys (malformed rows skipped), then passes the chosen `GetAll()` instances, ordered by `DeletionOrder`, to a single `Delete()` call. A storage exception is logged (`ErrorDeletingKeysFromStorage`) and returns `false`. Note: in ASP.NET Core 10.0, `XmlKeyManager` exposes `DeleteKeys` but does not implement `IDeletableKeyManager`.
 - `StorageWrapper` (internal) creates a new DI scope and resolves `TStorage` on every `GetAllElements` / `StoreElement` call, so scoped storage implementations work. It trims `FriendlyName`, normalizes empty or whitespace-only names to `null`, and wraps any `Insert` exception in `KeyInsertException`. `GetAllElements` logs and skips rows with malformed XML (`SkippingMalformedKey`) instead of failing the whole key ring.
 - Never log or expose key XML (it may contain unencrypted key material); this includes `XmlException` messages, which can quote the input.
-- **DB providers:** `PersistKeysWithDapperInSqlServer(...)` / `PersistKeysWithDapperInPostgreSQL(...)` configure `IOptions<DapperDataProtectionConfig>`, register the connection source as a singleton (`SqlConnectionFactory`; `NpgsqlDataSource` as a keyed singleton under the internal `Constants.DataSourceServiceKey`, created by a factory so the container disposes it, and so it never collides with the application's own data source), register the repository as scoped `IDbDataProtectionStorage`, then call `PersistKeysToStorage<IDbDataProtectionStorage>()`.
-- `IServiceProvider.UseDapperDataProtection()` (in the shared Dapper project) must be called at startup. It resolves the registrations and runs `InitializeDb()` when `DapperDataProtectionConfig.InitializeTable` is `true` (the default).
+- **DB providers:** `PersistKeysWithDapperInSqlServer(...)` / `PersistKeysWithDapperInPostgreSQL(...)` configure `IOptions<DapperDataProtectionConfig>` with an internal per-provider `DapperDataProtectionConfigValidator` and `ValidateOnStart()`, register the connection source as a singleton (`SqlConnectionFactory`; `NpgsqlDataSource` as a keyed singleton under the internal `Constants.DataSourceServiceKey`, created by a factory so the container disposes it, and so it never collides with the application's own data source), register the repository as scoped `IDbDataProtectionStorage`, then call `PersistKeysToStorage<IDbDataProtectionStorage>()`.
+- `IServiceProvider.UseDapperDataProtection()` (in the shared Dapper project) must be called at startup. It resolves the registrations and runs `InitializeDb()` when `DapperDataProtectionConfig.InitializeTable` is `true` (the default). Reading the options there also triggers validation when no host runs `ValidateOnStart`.
 
 ### Database Implementations
 
@@ -67,7 +67,9 @@ Both repositories use raw SQL via Dapper. They differ in naming conventions:
 
 - The PostgreSQL `SELECT` aliases each snake_case column to its `DataProtectionKeyEntity` property name (`AS "{nameof(...)}"`). Never set the process-wide `Dapper.DefaultTypeMap.MatchNamesWithUnderscores`: it changes column mapping for every Dapper query in the host application.
 - `Delete()` requires `DataProtectionKeyEntity` instances (as returned by `GetAll()`) and deletes by `Id`, row by row in order, in one transaction.
-- Schema and table names are interpolated directly into SQL strings, not parameterized or validated.
+- Schema and table names are validated at startup (SQL Server: `^[A-Za-z_][A-Za-z0-9_]*`, schema <= 128, table <= 112 to fit `IX_{table}_FriendlyName`; PostgreSQL: lowercase only, <= 63) and always quoted (`[...]` / `"..."`, with the closing quote escaped). PostgreSQL names are lowercase because earlier versions did not quote them: a mixed-case name would silently target a new, empty table.
+- SQL Server passes names as parameters wherever T-SQL accepts them (existence checks, `QUOTENAME`, the duplicate-index error message).
+- `InitializeDb()` creates a missing schema. It checks existence first (`SCHEMA_ID` / `pg_namespace`), because PostgreSQL's `CREATE SCHEMA IF NOT EXISTS` requires the database CREATE privilege even when the schema exists.
 - Defaults are in each provider's `Constants.cs`. Keep the table DDL in sync with the "Database schema" section of `README.md`.
 
 ### Testing

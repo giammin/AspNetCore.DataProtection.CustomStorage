@@ -31,6 +31,7 @@ The base package lets you plug any backend into the Data Protection key ring by 
   - [SQL Server](#sql-server)
   - [PostgreSQL](#postgresql)
 - [Configuration](#configuration)
+  - [Schema and table names](#schema-and-table-names)
 - [Database schema](#database-schema)
 - [Custom storage backend](#custom-storage-backend)
 - [Deleting keys](#deleting-keys)
@@ -137,20 +138,41 @@ builder.Services.AddDataProtection()
 
 | Option | Type | Default (SQL Server) | Default (PostgreSQL) | Description |
 |--------|------|----------------------|----------------------|-------------|
-| `SchemaName` | `string` | `dbo` | `public` | Schema that contains the keys table. |
-| `TableName` | `string` | `DataProtectionKeys` | `data_protection_keys` | Name of the keys table. |
-| `InitializeTable` | `bool` | `true` | `true` | When `true`, `UseDapperDataProtection()` creates the table and its unique index, each one only if it is missing. |
+| `SchemaName` | `string` | `dbo` | `public` | Schema that contains the keys table. See [Schema and table names](#schema-and-table-names). |
+| `TableName` | `string` | `DataProtectionKeys` | `data_protection_keys` | Name of the keys table. See [Schema and table names](#schema-and-table-names). |
+| `InitializeTable` | `bool` | `true` | `true` | When `true`, `UseDapperDataProtection()` creates the schema, the table and its unique index, each one only if it is missing. |
 
 `UseDapperDataProtection()` is an extension on `IServiceProvider`. Call it once at startup
 (`app.Services.UseDapperDataProtection()`): it validates the service registrations and, when
-`InitializeTable` is `true`, creates the table and the friendly-name unique index if they are
-missing. The index is also created on an existing table that lacks it; if that table already
+`InitializeTable` is `true`, creates the schema, the table and the friendly-name unique index if
+they are missing. The schema is created only when it does not exist, so the database user needs the
+permission to create schemas only in that case. The index is also created on an existing table that lacks it; if that table already
 contains duplicate non-null friendly names, initialization fails and the duplicates must be
 removed before retrying. Initialization is safe when several instances start at the same time:
 it runs in a transaction that holds a database-wide lock (`sp_getapplock` on SQL Server,
 `pg_advisory_xact_lock` on PostgreSQL), so concurrent calls wait for each other. If you set
 `InitializeTable = false` you are responsible for creating the schema (see below) before the
 app stores keys.
+
+### Schema and table names
+
+`SchemaName` and `TableName` are validated when the host starts, and at the latest when
+`UseDapperDataProtection()` runs. An invalid name throws an `OptionsValidationException` that names
+the option and the rule:
+
+| | SQL Server | PostgreSQL |
+|---|---|---|
+| Allowed characters | letters, digits and `_`; must not start with a digit | lowercase letters, digits and `_`; must not start with a digit |
+| Maximum length | 128 for the schema, 112 for the table (room for the `IX_{TableName}_FriendlyName` index name) | 63 |
+
+The names are always quoted in the generated SQL, so reserved words such as `order` or `user` are
+allowed.
+
+PostgreSQL folds unquoted names to lowercase, and earlier versions of this library did not quote
+them. Quoted names are case-sensitive, so a mixed-case name such as `DpKeys` would now refer to a
+new, empty table instead of the existing `dpkeys` table, and the existing keys would be ignored.
+Mixed-case names are therefore rejected at startup: if you configured one, replace it with its
+lowercase form, which is the name of the table created by the earlier version.
 
 ## Database schema
 

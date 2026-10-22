@@ -1,9 +1,11 @@
 using System;
+using AspNetCore.DataProtection.CustomStorage.Dapper;
 using AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL;
 using Dapper;
 using FluentAssertions;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using Xunit;
 
@@ -59,5 +61,41 @@ public class PostgreSqlDapperDataProtectionExtensionsTests
         services.AddDataProtection().PersistKeysWithDapperInPostgreSQL("Host=localhost;Database=test");
 
         DefaultTypeMap.MatchNamesWithUnderscores.Should().BeFalse();
+    }
+
+    [Fact]
+    public void PersistKeysWithDapperInPostgreSQL_DefaultConfig_PassesStartupValidation()
+    {
+        using var provider = BuildServiceProvider(_ => { });
+
+        provider.GetRequiredService<IStartupValidator>().Invoking(x => x.Validate())
+            .Should().NotThrow();
+    }
+
+    [Fact]
+    public void PersistKeysWithDapperInPostgreSQL_MixedCaseTableName_FailsStartupValidation()
+    {
+        using var provider = BuildServiceProvider(config => config.TableName = "DataProtectionKeys");
+
+        provider.GetRequiredService<IStartupValidator>().Invoking(x => x.Validate())
+            .Should().Throw<OptionsValidationException>()
+            .WithMessage($"*{nameof(DapperDataProtectionConfig)}.{nameof(DapperDataProtectionConfig.TableName)}*");
+    }
+
+    [Fact]
+    public void UseDapperDataProtection_InvalidSchemaName_ThrowsBeforeTouchingTheDatabase()
+    {
+        using var provider = BuildServiceProvider(config => config.SchemaName = "my-schema");
+
+        provider.Invoking(x => x.UseDapperDataProtection())
+            .Should().Throw<OptionsValidationException>()
+            .WithMessage($"*{nameof(DapperDataProtectionConfig)}.{nameof(DapperDataProtectionConfig.SchemaName)}*");
+    }
+
+    private static ServiceProvider BuildServiceProvider(Action<DapperDataProtectionConfig> configAction)
+    {
+        var services = new ServiceCollection();
+        services.AddDataProtection().PersistKeysWithDapperInPostgreSQL("Host=localhost;Database=test", configAction);
+        return services.BuildServiceProvider();
     }
 }
