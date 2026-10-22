@@ -28,6 +28,7 @@ dotnet test --no-build -c Release --filter-method "*.StorageWrapperTests.StoreEl
 - Central package management: versions live in `Directory.Packages.props`; `<PackageReference>` items have no `Version`.
 - `src/Directory.Build.props` holds shared package metadata and a separate `VersionPrefix*` property per package. CI overrides the version with `-p:Version=<tag>` on release.
 - `ImplicitUsings` is disabled everywhere: add explicit `using` directives. `Nullable` is enabled.
+- Packages embed the PDB (`DebugType=embedded`) and rely on Source Link; no separate symbols package is produced. `ContinuousIntegrationBuild` is enabled only on GitHub Actions (`GITHUB_ACTIONS=true`).
 - `InternalsVisibleTo AspNetCore.DataProtection.CustomStorage.Tests` is applied to all `src/` projects through `src/Directory.Build.props`.
 
 ## Architecture
@@ -76,7 +77,7 @@ Single test project: `tests/AspNetCore.DataProtection.CustomStorage.Tests` (xUni
 ### CI/CD (`.github/workflows`)
 
 - `build.yml`: push to `main` and PRs: restore, build (Release), test.
-- `nuget-publish.yml`: on `v*` tags, builds with `-p:Version=${tag without v}`, tests, obtains a short-lived key via NuGet trusted publishing (`NuGet/login`, OIDC, `NUGET_USER` secret) and pushes `./build/*.symbols.nupkg`.
+- `nuget-publish.yml`: on `v*` tags, builds with `-p:Version=${tag without v}`, tests, obtains a short-lived key via NuGet trusted publishing (`NuGet/login`, OIDC, `NUGET_USER` secret) and pushes `./build/*.nupkg`.
 - `github-release.yml`: creates a GitHub release on `v*` tags (`marvinpinto/action-automatic-releases`), with a changelog generated from the Conventional Commit messages on `main` since the previous tag.
 
 ## Commits and Pull Requests
