@@ -166,6 +166,28 @@ public class SqlServerDataProtectionRepositoryTests : IClassFixture<SqlServerCon
     }
 
     [Fact]
+    public void InitializeDb_NewTable_InsertDateIsDatetime2WithUtcDefault()
+    {
+        var tableName = NewTableName();
+        var sut = CreateSut(tableName);
+
+        sut.InitializeDb();
+
+        using var connection = _fixture.SqlConnectionFactory.CreateConnection();
+        var column = connection.QuerySingle<(string TypeName, string DefaultName, string DefaultDefinition)>(
+            """
+            SELECT t.[name], dc.[name], dc.[definition]
+            FROM [sys].[columns] c
+              JOIN [sys].[types] t ON t.[user_type_id] = c.[user_type_id]
+              JOIN [sys].[default_constraints] dc ON dc.[object_id] = c.[default_object_id]
+            WHERE c.[object_id] = OBJECT_ID(@TableName)
+              AND c.[name] = N'InsertDate';
+            """,
+            new { TableName = $"[{Constants.DefaultSchema}].[{tableName}]" });
+        column.Should().Be(("datetime2", $"DF_{tableName}_InsertDate", "(sysutcdatetime())"));
+    }
+
+    [Fact]
     public void InitializeDb_CustomSchemaAndTable_PersistsKeysInConfiguredTable()
     {
         const string schemaName = "custom_keys";

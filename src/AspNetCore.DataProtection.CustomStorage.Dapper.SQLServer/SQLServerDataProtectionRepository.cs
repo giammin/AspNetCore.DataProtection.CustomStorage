@@ -80,7 +80,7 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
                BEGIN
                    CREATE TABLE [{_config.SchemaName}].[{_config.TableName}](
                        [{nameof(DataProtectionKeyEntity.Id)}] [int] IDENTITY(1,1) NOT NULL,
-                       [{nameof(DataProtectionKeyEntity.InsertDate)}] [datetime] NOT NULL default getdate(),
+                       [{nameof(DataProtectionKeyEntity.InsertDate)}] [datetime2] NOT NULL CONSTRAINT [DF_{_config.TableName}_{nameof(DataProtectionKeyEntity.InsertDate)}] DEFAULT sysutcdatetime(),
                       [{nameof(DataProtectionKeyEntity.FriendlyName)}] [nvarchar](256) NULL,
                       [{nameof(DataProtectionKeyEntity.Xml)}] [nvarchar](max) NOT NULL,
                       CONSTRAINT [PK_{_config.TableName}] PRIMARY KEY CLUSTERED ([{nameof(DataProtectionKeyEntity.Id)}] ASC) ON [PRIMARY]
