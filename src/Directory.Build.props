@@ -25,8 +25,6 @@
 		<GeneratePackageOnBuild Condition=" '$(Configuration)' == 'Release' ">true</GeneratePackageOnBuild>
 		<PackageProjectUrl>https://github.com/giammin/AspNetCore.DataProtection.CustomStorage</PackageProjectUrl>
 		<PackageOutputPath>../../build</PackageOutputPath>
-		<IncludeSource>true</IncludeSource>
-		<IncludeSymbols>true</IncludeSymbols>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 		<PackageTags>aspnetcore;dataprotection;storage</PackageTags>
 		<!--<PackageReleaseNotes></PackageReleaseNotes>-->
@@ -37,11 +35,10 @@
 		<Authors>giammin</Authors>
 		<Company></Company>
 
-		<!--<ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">True</ContinuousIntegrationBuild>-->
+		<ContinuousIntegrationBuild Condition=" '$(GITHUB_ACTIONS)' == 'true' ">true</ContinuousIntegrationBuild>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="System.Security.Cryptography.Xml" />
 		<InternalsVisibleTo Include="AspNetCore.DataProtection.CustomStorage.Tests" />
 		<None Condition="Exists('$(ProjectDir)README.md')==false" Include="..\..\README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>
