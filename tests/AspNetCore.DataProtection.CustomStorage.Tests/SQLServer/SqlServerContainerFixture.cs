@@ -10,6 +10,9 @@ using Testcontainers.MsSql;
 using Xunit;
 using Constants = AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer.Constants;
 
+// One container for the whole assembly: tests that do not use the default table work on their own tables.
+[assembly: AssemblyFixture(typeof(AspNetCore.DataProtection.CustomStorage.Tests.SQLServer.SqlServerContainerFixture))]
+
 namespace AspNetCore.DataProtection.CustomStorage.Tests.SQLServer;
 public class SqlServerContainerFixture : IAsyncLifetime
 {

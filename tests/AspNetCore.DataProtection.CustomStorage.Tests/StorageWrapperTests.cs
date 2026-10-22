@@ -11,72 +11,65 @@ namespace AspNetCore.DataProtection.CustomStorage.Tests;
 
 public class StorageWrapperTests
 {
-     private readonly StorageWrapper<IDataProtectionStorage> _sut;
-     private readonly IServiceProvider _services;
-     private readonly IServiceScopeFactory _scopeFactory;
-     private readonly IServiceScope _scope;
-     private readonly ILoggerFactory _loggerFactory;
-     private readonly ILogger _logger = Substitute.For<ILogger>();
+    private readonly StorageWrapper<IDataProtectionStorage> _sut;
+    private readonly IServiceProvider _services;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IServiceScope _scope;
+    private readonly CapturingLoggerFactory _loggerFactory = new();
     private readonly IDataProtectionStorage _storage;
 
-     public StorageWrapperTests()
-     {
-         _services = Substitute.For<IServiceProvider>();
-         _loggerFactory = Substitute.For<ILoggerFactory>();
-         _storage = Substitute.For<IDataProtectionStorage>();
+    public StorageWrapperTests()
+    {
+        _services = Substitute.For<IServiceProvider>();
+        _storage = Substitute.For<IDataProtectionStorage>();
 
-         // The storage is resolvable only from the scoped provider, not from the root one.
-         var scopedServices = Substitute.For<IServiceProvider>();
-         scopedServices.GetService(typeof(IDataProtectionStorage)).Returns(_storage);
+        // The storage is resolvable only from the scoped provider, not from the root one.
+        var scopedServices = Substitute.For<IServiceProvider>();
+        scopedServices.GetService(typeof(IDataProtectionStorage)).Returns(_storage);
 
-         _scope = Substitute.For<IServiceScope>();
-         _scope.ServiceProvider.Returns(scopedServices);
+        _scope = Substitute.For<IServiceScope>();
+        _scope.ServiceProvider.Returns(scopedServices);
 
-         _scopeFactory = Substitute.For<IServiceScopeFactory>();
-         _scopeFactory.CreateScope().Returns(_scope);
+        _scopeFactory = Substitute.For<IServiceScopeFactory>();
+        _scopeFactory.CreateScope().Returns(_scope);
 
-         _services.GetService(typeof(IServiceScopeFactory)).Returns(_scopeFactory);
+        _services.GetService(typeof(IServiceScopeFactory)).Returns(_scopeFactory);
 
-         _loggerFactory.CreateLogger(Arg.Any<string>()).Returns(_logger);
-         _sut = new StorageWrapper<IDataProtectionStorage>(_services, _loggerFactory);
-     }
-     [Fact]
-     public void Constructor_AllArgumentsNull_ThrowArgumentNullException()
-     {
-         Assert.Throws<ArgumentNullException>(() => new StorageWrapper<IDataProtectionStorage>(null!, null!));
-     }
-     [Fact]
-     public void Constructor_LoggerFactoryIsNull_ThrowArgumentNullException()
-     {
-         // Act
-         Action act = () =>
-         {
-             var _ = new StorageWrapper<IDataProtectionStorage>(_services, null!);
-         };
+        _sut = new StorageWrapper<IDataProtectionStorage>(_services, _loggerFactory);
+    }
 
-         // Assert
-         act.Should().Throw<ArgumentNullException>().WithMessage("*loggerFactory*");
-     }
+    [Fact]
+    public void Constructor_LoggerFactoryIsNull_ThrowArgumentNullException()
+    {
+        // Act
+        Action act = () =>
+        {
+            var _ = new StorageWrapper<IDataProtectionStorage>(_services, null!);
+        };
 
-     [Fact]
-     public void Constructor_ServiceProviderIsNull_ThrowArgumentNullException()
-     {
-         // Act
-         var act = () =>
-         {
-             var _ = new StorageWrapper<IDataProtectionStorage>(null!, _loggerFactory);
-         };
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithMessage("*loggerFactory*");
+    }
 
-         // Assert
-         act.Should().Throw<ArgumentNullException>().WithMessage("*services*");
-     }
+    [Fact]
+    public void Constructor_ServiceProviderIsNull_ThrowArgumentNullException()
+    {
+        // Act
+        var act = () =>
+        {
+            var _ = new StorageWrapper<IDataProtectionStorage>(null!, _loggerFactory);
+        };
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithMessage("*services*");
+    }
     [Fact]
     public void StoreElement_ValidKey_CallsStorageSave()
     {
         _sut.StoreElement(TestConstants.XElement, TestConstants.FriendlyName);
         var key = new DataProtectionKey
         {
-            FriendlyName = TestConstants.FriendlyName.Trim(),
+            FriendlyName = TestConstants.FriendlyName,
             Xml = TestConstants.XElement.ToString(SaveOptions.DisableFormatting)
         };
         _storage.Received(1).Insert(Arg.Is(key));
@@ -95,62 +88,43 @@ public class StorageWrapperTests
         _sut.Invoking(x => x.StoreElement(TestConstants.XElement,TestConstants.FriendlyName))
             .Should().Throw<KeyInsertException>();
     }
-    [Fact]
-    public void StoreElement_ShouldCallInsertOnStorage()
-    {
-        // Arrange
-        var element = new XElement("TestElement");
 
-        // Act
-        _sut.StoreElement(element, "TestName");
-
-        // Assert
-        _storage.Received(1).Insert(Arg.Is<DataProtectionKey>(key =>
-            key != null && key.FriendlyName == "TestName" && key.Xml == element.ToString(SaveOptions.DisableFormatting)));
-    }
-
-    private const string KeyMaterial = "c2VjcmV0LWtleS1tYXRlcmlhbA==";
+    private const string KeyMaterial = TestConstants.KeyMaterial;
     private const string KeyFriendlyName = "key-6f1c2b9e";
     private static readonly XElement KeyElement = new("key", new XElement("masterKey", KeyMaterial));
 
     [Fact]
     public void GetAllElements_KeyRead_DoesNotLogKeyXml()
     {
-        var loggerFactory = new CapturingLoggerFactory();
-        var sut = new StorageWrapper<IDataProtectionStorage>(_services, loggerFactory);
         _storage.GetAll().Returns([new DataProtectionKey { FriendlyName = KeyFriendlyName, Xml = KeyElement.ToString() }]);
 
-        sut.GetAllElements();
+        _sut.GetAllElements();
 
-        loggerFactory.Entries.Should().Contain(e => e.Contains(KeyFriendlyName));
-        loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
+        _loggerFactory.Entries.Should().Contain(e => e.Contains(KeyFriendlyName));
+        _loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
     }
 
     [Fact]
     public void StoreElement_KeySaved_DoesNotLogKeyXml()
     {
-        var loggerFactory = new CapturingLoggerFactory();
-        var sut = new StorageWrapper<IDataProtectionStorage>(_services, loggerFactory);
 
-        sut.StoreElement(KeyElement, KeyFriendlyName);
+        _sut.StoreElement(KeyElement, KeyFriendlyName);
 
-        loggerFactory.Entries.Should().Contain(e => e.Contains(KeyFriendlyName));
-        loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
+        _loggerFactory.Entries.Should().Contain(e => e.Contains(KeyFriendlyName));
+        _loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
     }
 
     [Fact]
     public void StoreElement_StorageFails_LogsErrorWithStorageExceptionAndWithoutKeyXml()
     {
-        var loggerFactory = new CapturingLoggerFactory();
-        var sut = new StorageWrapper<IDataProtectionStorage>(_services, loggerFactory);
         var storageException = new InvalidOperationException("insert failed");
         _storage.WhenForAnyArgs(x => x.Insert(null!)).Throw(storageException);
 
-        sut.Invoking(x => x.StoreElement(KeyElement, KeyFriendlyName)).Should().Throw<KeyInsertException>();
+        _sut.Invoking(x => x.StoreElement(KeyElement, KeyFriendlyName)).Should().Throw<KeyInsertException>();
 
-        loggerFactory.Entries.Should().ContainSingle(e => e.Level == LogLevel.Error)
+        _loggerFactory.Entries.Should().ContainSingle(e => e.Level == LogLevel.Error)
             .Which.Exception.Should().BeSameAs(storageException);
-        loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
+        _loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
     }
 
     [Fact]
@@ -206,15 +180,13 @@ public class StorageWrapperTests
     [Fact]
     public void GetAllElements_RowWithMalformedXml_LogsErrorNamingRowWithoutKeyXml()
     {
-        var loggerFactory = new CapturingLoggerFactory();
-        var sut = new StorageWrapper<IDataProtectionStorage>(_services, loggerFactory);
         _storage.GetAll().Returns([new DataProtectionKey { FriendlyName = MalformedFriendlyName, Xml = MalformedKeyXml }]);
 
-        sut.GetAllElements().Should().BeEmpty();
+        _sut.GetAllElements().Should().BeEmpty();
 
-        loggerFactory.Entries.Should().ContainSingle(e => e.Level == LogLevel.Error)
+        _loggerFactory.Entries.Should().ContainSingle(e => e.Level == LogLevel.Error)
             .Which.Should().Match<LogEntry>(e => e.EventId.Name == "SkippingMalformedKey" && e.Contains(MalformedFriendlyName));
-        loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
+        _loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
     }
 
     [Fact]

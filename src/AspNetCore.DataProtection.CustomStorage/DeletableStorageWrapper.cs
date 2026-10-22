@@ -22,16 +22,9 @@ internal class DeletableStorageWrapper<TStorage> : StorageWrapper<TStorage>, IDe
     /// <param name="services"></param>
     /// <param name="loggerFactory"></param>
     /// <exception cref="ArgumentNullException"></exception>
-    /// <exception cref="ArgumentException"><typeparamref name="TStorage"/> does not implement <see cref="IDeletableDataProtectionStorage"/></exception>
     public DeletableStorageWrapper(IServiceProvider services, ILoggerFactory loggerFactory)
         : base(services, loggerFactory)
     {
-        if (!typeof(TStorage).IsAssignableTo(typeof(IDeletableDataProtectionStorage)))
-        {
-            throw new ArgumentException(
-                $"'{typeof(TStorage).Name}' does not implement '{nameof(IDeletableDataProtectionStorage)}'.",
-                nameof(TStorage));
-        }
     }
 
     /// <inheritdoc />
@@ -46,15 +39,7 @@ internal class DeletableStorageWrapper<TStorage> : StorageWrapper<TStorage>, IDe
         using var scope = _services.CreateScope();
         var storage = (IDeletableDataProtectionStorage)scope.ServiceProvider.GetRequiredService<TStorage>();
 
-        var deletableElements = new List<DeletableElement>();
-        foreach (var key in storage.GetAll())
-        {
-            var element = TryParseKey(key);
-            if (element is not null)
-            {
-                deletableElements.Add(new DeletableElement(key, element));
-            }
-        }
+        var deletableElements = ParseKeys(storage).Select(k => new DeletableElement(k.Key, k.Element)).ToList();
 
         chooseElements(deletableElements);
 

@@ -13,7 +13,7 @@ using Xunit;
 using Constants = AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer.Constants;
 
 namespace AspNetCore.DataProtection.CustomStorage.Tests.SQLServer;
-public class SqlServerDataProtectionRepositoryTests : IClassFixture<SqlServerContainerFixture>
+public class SqlServerDataProtectionRepositoryTests
 {
     private readonly SqlServerContainerFixture _fixture;
     private readonly SQLServerDataProtectionRepository _sut;

@@ -18,7 +18,7 @@ namespace AspNetCore.DataProtection.CustomStorage.Tests.PostgreSQL;
 /// <summary>
 /// End-to-end tests that wire the PostgreSQL provider through the public extension methods and real DI.
 /// </summary>
-public class PostgreSqlEndToEndTests : IClassFixture<PostgreSqlContainerFixture>
+public class PostgreSqlEndToEndTests
 {
     private const string ApplicationName = "AspNetCore.DataProtection.CustomStorage.Tests";
     private const string Purpose = "end-to-end";
