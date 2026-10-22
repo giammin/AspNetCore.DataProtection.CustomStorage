@@ -36,6 +36,7 @@ The base package lets you plug any backend into the Data Protection key ring by 
 - [Custom storage backend](#custom-storage-backend)
 - [Deleting keys](#deleting-keys)
 - [How it works](#how-it-works)
+- [Upgrading from v1 to v2](#upgrading-from-v1-to-v2)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -354,6 +355,129 @@ The database providers add a Dapper layer (`IDbDataProtectionStorage`, which ext
 implementing the raw SQL for SQL Server and PostgreSQL, plus key deletion, schema initialization
 (`InitializeDb()`) and an async read path (`GetAllAsync()`) that returns the stored
 `DataProtectionKeyEntity` rows, including `Id` and `InsertDate`, for tooling such as key auditing.
+
+## Upgrading from v1 to v2
+
+Version 2 changes the public API, validates the configuration at startup and changes some behavior
+of the providers. Check each item below against your application before upgrading from a 1.x
+release.
+
+### Breaking changes
+
+#### `IDbDataProtectionStorage` requires `Delete`
+
+Affects custom implementations of `IDbDataProtectionStorage`; applications that only use the SQL
+Server or PostgreSQL provider are not affected.
+
+`IDbDataProtectionStorage` now extends `IDeletableDataProtectionStorage`. Implement
+`Delete(IReadOnlyCollection<DataProtectionKey> keys)`: delete every given key, in the given order,
+or none of them, and throw on failure. The keys are instances previously returned by `GetAll()`.
+See [Custom storage backend](#custom-storage-backend).
+
+#### Schema and table names are validated at startup
+
+Affects applications that set `SchemaName` or `TableName`.
+
+An invalid name now fails when the host starts, or at the latest in `UseDapperDataProtection()`,
+with an `OptionsValidationException`. The rules are listed in
+[Schema and table names](#schema-and-table-names).
+
+- **SQL Server:** v1 accepted any name, because it was enclosed in brackets. Names that start with
+  a digit, contain characters other than letters, digits and `_`, or are longer than the limits
+  must be changed: rename the table (for example with `sp_rename`) or move it to a valid schema
+  (`ALTER SCHEMA ... TRANSFER`), then update the configuration.
+- **PostgreSQL:** names must be lowercase. v1 did not quote the names, so PostgreSQL folded them to
+  lowercase: a table configured as `DpKeys` was created as `dpkeys`. Replace the configured name
+  with its lowercase form; the database does not need to change.
+
+#### The PostgreSQL provider no longer enables Dapper's underscore mapping
+
+Affects applications that run their own Dapper queries in the same process.
+
+v1 set `Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true` process-wide, which also changed
+the column mapping of the application's own Dapper queries. v2 no longer touches this setting. If
+your queries rely on it, set it at startup:
+
+```csharp
+Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+```
+
+#### The PostgreSQL provider registers its data source as a keyed service
+
+v1 registered its `NpgsqlDataSource` as an unkeyed singleton. v2 registers it as a keyed service
+(see [PostgreSQL](#postgresql)). This affects:
+
+- Applications that resolve `NpgsqlDataSource` from dependency injection and received the keys
+  data source: register your own data source, for example with `AddNpgsqlDataSource`.
+- Applications that register `PostgreSQLDataProtectionRepository` themselves instead of calling
+  `PersistKeysWithDapperInPostgreSQL()`: the constructor now resolves the provider's keyed data
+  source. Call `PersistKeysWithDapperInPostgreSQL()`, or register the repository with a factory
+  that passes the data source explicitly:
+
+  ```csharp
+  builder.Services.AddScoped<IDbDataProtectionStorage>(sp => new PostgreSQLDataProtectionRepository(
+      dataSource, sp.GetRequiredService<IOptionsSnapshot<DapperDataProtectionConfig>>()));
+  ```
+
+A malformed connection string now throws when the data source is first resolved, in
+`UseDapperDataProtection()`, instead of in `PersistKeysWithDapperInPostgreSQL()`.
+
+#### `StorageWrapper<TStorage>` is internal
+
+Affects code that created `StorageWrapper<TStorage>` directly, for example to assign
+`KeyManagementOptions.XmlRepository` by hand. Use `PersistKeysToStorage<TStorage>()` instead.
+
+#### `LoggingExtensions` is internal
+
+`AspNetCore.DataProtection.CustomStorage.LoggingExtensions` and `LogInitialization` are no longer
+public. They were implementation details and have no replacement.
+
+The event ids and names are unchanged. The messages of `ReadKeyFromStorage`, `SavingKeyToStorage`
+and `ErrorSavingKeyToStorage` no longer contain a `Value` property (the key XML), and
+`ErrorSavingKeyToStorage` now carries the storage exception. Update any log query or filter that
+uses `Value`.
+
+### Behavior changes
+
+These need no code change, but can affect a running application:
+
+- **SQL Server unique index on existing tables.** `InitializeDb()` now also creates the
+  `IX_{TableName}_FriendlyName` index on an existing table that lacks it. If the table contains
+  duplicate non-null friendly names, startup fails with an error naming the index. Find the
+  duplicates with the query below, keep one row per name (rows with the same name normally hold
+  the same key; compare their `Xml` before deleting), then start again:
+
+  ```sql
+  SELECT [FriendlyName], COUNT(*) AS [Rows]
+  FROM [dbo].[DataProtectionKeys]
+  WHERE [FriendlyName] IS NOT NULL
+  GROUP BY [FriendlyName]
+  HAVING COUNT(*) > 1;
+  ```
+
+- **SQL Server `InsertDate` in UTC.** New tables store `InsertDate` as `datetime2` in UTC. Existing
+  tables are not altered and keep the server's local time; see
+  [Migrating an existing SQL Server table](#migrating-an-existing-sql-server-table).
+- **Missing schema created.** When `InitializeTable` is `true`, `InitializeDb()` creates a missing
+  schema instead of failing. The database user needs the permission to create schemas only in
+  that case.
+- **Blank friendly names stored as `NULL`.** An empty or whitespace-only friendly name is passed to
+  `Insert` as `null`; v1 passed an empty string. Custom storages must accept `null`.
+- **Malformed keys skipped.** A stored key whose XML is malformed is logged
+  (`SkippingMalformedKey`) and skipped; in v1 it made loading the whole key ring fail.
+- **No key XML in `KeyInsertException`.** The exception message names the key by friendly name
+  only; the storage exception is the `InnerException`.
+- **Key deletion enabled.** With the database providers, or any
+  `IDeletableDataProtectionStorage`, `XmlKeyManager.CanDeleteKeys` is now `true` and
+  `DeleteKeys` deletes the stored rows. See [Deleting keys](#deleting-keys).
+
+### Packaging
+
+- The packages depend on `Microsoft.AspNetCore.DataProtection` 10.0.13 or later. The direct
+  reference to `System.Security.Cryptography.Xml` is removed; it is still referenced through
+  `Microsoft.AspNetCore.DataProtection`.
+- No separate symbols package is published: the PDB is embedded in the package, and Source Link
+  points to the sources on GitHub.
 
 ## Contributing
 
