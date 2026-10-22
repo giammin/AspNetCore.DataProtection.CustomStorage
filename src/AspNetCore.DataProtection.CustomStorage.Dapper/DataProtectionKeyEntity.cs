@@ -13,7 +13,9 @@ public record DataProtectionKeyEntity : DataProtectionKey
     /// </summary>
     public int Id { get; set; }
     /// <summary>
-    /// insertion date
+    /// insertion date, set by the database when the key is stored.
+    /// Tables created by the providers store it in UTC; SQL Server tables created by
+    /// earlier versions store the server's local time.
     /// </summary>
     public DateTime InsertDate { get; set; }
 
