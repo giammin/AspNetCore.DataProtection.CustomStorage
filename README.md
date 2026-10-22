@@ -139,12 +139,16 @@ builder.Services.AddDataProtection()
 |--------|------|----------------------|----------------------|-------------|
 | `SchemaName` | `string` | `dbo` | `public` | Schema that contains the keys table. |
 | `TableName` | `string` | `DataProtectionKeys` | `data_protection_keys` | Name of the keys table. |
-| `InitializeTable` | `bool` | `true` | `true` | When `true`, `UseDapperDataProtection()` creates the table (and its unique index) if it is missing. |
+| `InitializeTable` | `bool` | `true` | `true` | When `true`, `UseDapperDataProtection()` creates the table and its unique index, each one only if it is missing. |
 
 `UseDapperDataProtection()` is an extension on `IServiceProvider`. Call it once at startup
 (`app.Services.UseDapperDataProtection()`): it validates the service registrations and, when
-`InitializeTable` is `true`, creates the table. If you set `InitializeTable = false` you are
-responsible for creating the schema (see below) before the app stores keys.
+`InitializeTable` is `true`, creates the table and the friendly-name unique index if they are
+missing. The index is also created on an existing table that lacks it; if that table already
+contains duplicate non-null friendly names, initialization fails and the duplicates must be
+removed before retrying. If you set
+`InitializeTable = false` you are responsible for creating the schema (see below) before the
+app stores keys.
 
 ## Database schema
 

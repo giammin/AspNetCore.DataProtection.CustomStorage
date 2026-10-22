@@ -1,10 +1,15 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using AspNetCore.DataProtection.CustomStorage.Dapper;
 using AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer;
+using Dapper;
 using FluentAssertions;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Options;
+using NSubstitute;
 using Xunit;
+using Constants = AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer.Constants;
 
 namespace AspNetCore.DataProtection.CustomStorage.Tests.SQLServer;
 public class SqlServerDataProtectionRepositoryTests : IClassFixture<SqlServerContainerFixture>
@@ -92,5 +97,106 @@ public class SqlServerDataProtectionRepositoryTests : IClassFixture<SqlServerCon
             .And.Contain(x => x.FriendlyName == null && x.Xml == unnamed.Xml)
             .And.OnlyContain(x => x.Id > 0 && x.InsertDate != default);
         entities.Select(x => x.Id).Should().OnlyHaveUniqueItems();
+    }
+
+    [Fact]
+    public void InitializeDb_TableExistsWithoutIndex_CreatesIndex()
+    {
+        var tableName = NewTableName();
+        var sut = CreateSut(tableName);
+        sut.InitializeDb();
+        DropFriendlyNameIndex(tableName);
+
+        sut.InitializeDb();
+
+        FriendlyNameIndexExists(tableName).Should().BeTrue();
+        var key = new DataProtectionKey { FriendlyName = "FriendlyName", Xml = "Xml" };
+        sut.Insert(key);
+        sut.Invoking(x => x.Insert(key))
+            .Should().Throw<SqlException>().WithMessage("*duplicate key*");
+    }
+
+    [Fact]
+    public void InitializeDb_TableAndIndexExist_Succeeds()
+    {
+        var tableName = NewTableName();
+        var sut = CreateSut(tableName);
+        sut.InitializeDb();
+
+        sut.Invoking(x => x.InitializeDb()).Should().NotThrow();
+
+        FriendlyNameIndexExists(tableName).Should().BeTrue();
+    }
+
+    [Fact]
+    public void InitializeDb_TableWithoutIndexHasDuplicateFriendlyNames_ThrowsClearError()
+    {
+        var tableName = NewTableName();
+        var sut = CreateSut(tableName);
+        sut.InitializeDb();
+        DropFriendlyNameIndex(tableName);
+        var key = new DataProtectionKey { FriendlyName = "FriendlyName", Xml = "Xml" };
+        sut.Insert(key);
+        sut.Insert(key);
+
+        sut.Invoking(x => x.InitializeDb())
+            .Should().Throw<SqlException>()
+            .WithMessage($"*IX_{tableName}_FriendlyName*duplicate non-null*FriendlyName*");
+
+        FriendlyNameIndexExists(tableName).Should().BeFalse();
+    }
+
+    [Fact]
+    public void InitializeDb_TableWithoutIndexHasDuplicateNullFriendlyNames_CreatesIndex()
+    {
+        var tableName = NewTableName();
+        var sut = CreateSut(tableName);
+        sut.InitializeDb();
+        DropFriendlyNameIndex(tableName);
+        sut.Insert(new DataProtectionKey { FriendlyName = null, Xml = "xml1" });
+        sut.Insert(new DataProtectionKey { FriendlyName = null, Xml = "xml2" });
+
+        sut.InitializeDb();
+
+        FriendlyNameIndexExists(tableName).Should().BeTrue();
+    }
+
+    private static string NewTableName() => $"Keys_{Guid.NewGuid():N}";
+
+    private SQLServerDataProtectionRepository CreateSut(string tableName)
+    {
+        var options = Substitute.For<IOptionsSnapshot<DapperDataProtectionConfig>>();
+        options.Value.Returns(new DapperDataProtectionConfig
+        {
+            SchemaName = Constants.DefaultSchema,
+            TableName = tableName
+        });
+        return new SQLServerDataProtectionRepository(_fixture.SqlConnectionFactory, options);
+    }
+
+    private void DropFriendlyNameIndex(string tableName)
+    {
+        using var connection = _fixture.SqlConnectionFactory.CreateConnection();
+        connection.Execute(
+            $"DROP INDEX [IX_{tableName}_FriendlyName] ON [{Constants.DefaultSchema}].[{tableName}];");
+    }
+
+    private bool FriendlyNameIndexExists(string tableName)
+    {
+        using var connection = _fixture.SqlConnectionFactory.CreateConnection();
+        return connection.ExecuteScalar<int>(
+            """
+            SELECT COUNT(*)
+            FROM [sys].[indexes]
+            WHERE [object_id] = OBJECT_ID(@TableName)
+              AND [name] = @IndexName
+              AND [is_unique] = 1
+              AND [has_filter] = 1;
+            """,
+            new
+            {
+                TableName = $"[{Constants.DefaultSchema}].[{tableName}]",
+                IndexName = $"IX_{tableName}_FriendlyName"
+            }) == 1;
     }
 }
