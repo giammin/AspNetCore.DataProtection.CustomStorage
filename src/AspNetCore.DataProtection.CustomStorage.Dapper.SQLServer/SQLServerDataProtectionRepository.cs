@@ -10,6 +10,8 @@ namespace AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer;
 /// <inheritdoc />
 public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
 {
+    // Database-wide: initializations of different tables are serialized too, which is harmless.
+    private const string InitializeDbLockResource = "AspNetCore.DataProtection.CustomStorage.InitializeDb";
     private readonly SqlConnectionFactory _connectionFactory;
     private readonly DapperDataProtectionConfig _config;
 
@@ -104,14 +106,25 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Safe to call concurrently from several instances: the initialization is serialized
+    /// with an exclusive application lock held until the transaction ends.
+    /// </remarks>
     public void InitializeDb()
     {
         var indexName = $"IX_{_config.TableName}_{nameof(DataProtectionKeyEntity.FriendlyName)}";
         using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        // Without the lock, concurrent existence checks can all pass and the later CREATE statements fail.
         // The unique index is ensured independently of the table, so that an existing table
         // without the index (created manually, or with the index dropped) gets it restored.
         connection.Execute(
             $"""
+               DECLARE @lockResult int;
+               EXEC @lockResult = sp_getapplock @Resource = @LockResource, @LockMode = N'Exclusive', @LockOwner = N'Transaction';
+               IF @lockResult < 0
+                  THROW 50000, N'Cannot acquire the application lock to initialize the data protection keys table.', 1;
                IF NOT EXISTS(SELECT t.[object_id]
                FROM [sys].[tables] t
                   JOIN sys.schemas s ON s.schema_id=t.schema_id
@@ -137,6 +150,9 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
                      THROW 50000, N'Cannot create unique index [{indexName}] on [{_config.SchemaName}].[{_config.TableName}]: the table contains duplicate non-null [{nameof(DataProtectionKeyEntity.FriendlyName)}] values. Remove the duplicates and initialize again.', 1;
                   CREATE UNIQUE NONCLUSTERED INDEX [{indexName}] ON [{_config.SchemaName}].[{_config.TableName}]([{nameof(DataProtectionKeyEntity.FriendlyName)}] ASC) WHERE [{nameof(DataProtectionKeyEntity.FriendlyName)}] IS NOT NULL ON [PRIMARY];
                END
-               """);
+               """,
+            new { LockResource = InitializeDbLockResource },
+            transaction);
+        transaction.Commit();
     }
 }

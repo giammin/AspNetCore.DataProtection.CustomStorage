@@ -142,7 +142,9 @@ builder.Services.AddDataProtection()
 `InitializeTable` is `true`, creates the table and the friendly-name unique index if they are
 missing. The index is also created on an existing table that lacks it; if that table already
 contains duplicate non-null friendly names, initialization fails and the duplicates must be
-removed before retrying. If you set
+removed before retrying. Initialization is safe when several instances start at the same time:
+it runs in a transaction that holds a database-wide lock (`sp_getapplock` on SQL Server,
+`pg_advisory_xact_lock` on PostgreSQL), so concurrent calls wait for each other. If you set
 `InitializeTable = false` you are responsible for creating the schema (see below) before the
 app stores keys.
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using AspNetCore.DataProtection.CustomStorage.Dapper;
 using AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer;
@@ -276,6 +277,34 @@ public class SqlServerDataProtectionRepositoryTests : IClassFixture<SqlServerCon
         sut.GetAll().Should().ContainSingle(x => x.FriendlyName == key.FriendlyName && x.Xml == key.Xml);
         CountRows(schemaName, tableName).Should().Be(1);
         _sut.GetAll().Should().NotContain(x => x.FriendlyName == key.FriendlyName);
+    }
+
+    [Fact]
+    public async Task InitializeDb_ConcurrentCallsOnNewTable_AllSucceed()
+    {
+        const int callCount = 10;
+        // Pooled connections make the calls overlap; with cold connections the race rarely shows.
+        var connections = Enumerable.Range(0, callCount).Select(_ => _fixture.SqlConnectionFactory.CreateConnection()).ToList();
+        connections.ForEach(connection => connection.Open());
+        connections.ForEach(connection => connection.Dispose());
+
+        // Several rounds, because a single round does not always hit the race.
+        for (var round = 0; round < 5; round++)
+        {
+            var tableName = NewTableName();
+            // One repository per call, as on separate nodes starting at the same time.
+            var suts = Enumerable.Range(0, callCount).Select(_ => CreateSut(tableName)).ToList();
+            using var barrier = new Barrier(callCount);
+
+            var calls = suts.Select(sut => Task.Factory.StartNew(() =>
+            {
+                barrier.SignalAndWait();
+                sut.InitializeDb();
+            }, TaskCreationOptions.LongRunning)).ToList();
+
+            await FluentActions.Awaiting(() => Task.WhenAll(calls)).Should().NotThrowAsync();
+            FriendlyNameIndexExists(tableName).Should().BeTrue();
+        }
     }
 
     private static string NewTableName() => $"Keys_{Guid.NewGuid():N}";

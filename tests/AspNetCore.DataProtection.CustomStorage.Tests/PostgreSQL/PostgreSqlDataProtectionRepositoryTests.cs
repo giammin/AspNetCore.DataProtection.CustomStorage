@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using AspNetCore.DataProtection.CustomStorage.Dapper;
 using AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL;
@@ -141,6 +142,45 @@ public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlCo
             connection.ExecuteScalar<long>($"SELECT COUNT(*) FROM {schemaName}.{tableName};").Should().Be(1);
         }
         _sut.GetAll().Should().NotContain(x => x.FriendlyName == key.FriendlyName);
+    }
+
+    [Fact]
+    public async Task InitializeDb_ConcurrentCallsOnNewTable_AllSucceed()
+    {
+        const int callCount = 10;
+        // Pooled connections make the calls overlap; with cold connections the race rarely shows.
+        var connections = Enumerable.Range(0, callCount).Select(_ => _fixture.NpgsqlDataSource.OpenConnection()).ToList();
+        connections.ForEach(connection => connection.Dispose());
+
+        // Several rounds, because a single round does not always hit the race.
+        for (var round = 0; round < 5; round++)
+        {
+            var tableName = $"keys_{Guid.NewGuid().ToString("N")[..12]}";
+            var options = Substitute.For<IOptionsSnapshot<DapperDataProtectionConfig>>();
+            options.Value.Returns(new DapperDataProtectionConfig
+            {
+                SchemaName = Constants.DefaultSchema,
+                TableName = tableName
+            });
+            // One repository per call, as on separate nodes starting at the same time.
+            var suts = Enumerable.Range(0, callCount)
+                .Select(_ => new PostgreSQLDataProtectionRepository(_fixture.NpgsqlDataSource, options))
+                .ToList();
+            using var barrier = new Barrier(callCount);
+
+            var calls = suts.Select(sut => Task.Factory.StartNew(() =>
+            {
+                barrier.SignalAndWait();
+                sut.InitializeDb();
+            }, TaskCreationOptions.LongRunning)).ToList();
+
+            await FluentActions.Awaiting(() => Task.WhenAll(calls)).Should().NotThrowAsync();
+            using var connection = _fixture.NpgsqlDataSource.OpenConnection();
+            connection.ExecuteScalar<long>(
+                    "SELECT COUNT(*) FROM pg_indexes WHERE schemaname = @Schema AND indexname = @Index;",
+                    new { Schema = Constants.DefaultSchema, Index = $"ix_{Constants.DefaultSchema}_{tableName}_friendly_name" })
+                .Should().Be(1);
+        }
     }
 
     [Fact]

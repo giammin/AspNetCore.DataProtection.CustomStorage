@@ -11,6 +11,8 @@ namespace AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL;
 /// <inheritdoc />
 public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
 {
+    // Database-wide: initializations of different tables are serialized too, which is harmless.
+    private const string InitializeDbLockName = "AspNetCore.DataProtection.CustomStorage.InitializeDb";
     private readonly NpgsqlDataSource _dataSource;
     private readonly DapperDataProtectionConfig _config;
     private string GetAllQuery() => 
@@ -104,10 +106,19 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Safe to call concurrently from several instances: the initialization is serialized
+    /// with a transaction-level advisory lock.
+    /// </remarks>
     public void InitializeDb()
     {
-        using var connection = _dataSource.CreateConnection();
+        using var connection = _dataSource.OpenConnection();
+        using var transaction = connection.BeginTransaction();
+        // Without the lock, concurrent IF NOT EXISTS statements can all create the same relation
+        // and fail with a unique violation in the system catalogs.
         connection.Execute($"""
+             SELECT pg_advisory_xact_lock(hashtext(@LockName));
+
              CREATE TABLE IF NOT EXISTS {_config.SchemaName}.{_config.TableName}
               (
                  id INTEGER generated always as identity,
@@ -121,6 +132,9 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
               ON {_config.SchemaName}.{_config.TableName} USING btree
               (friendly_name COLLATE pg_catalog."default" ASC NULLS LAST)
               TABLESPACE pg_default;
-             """);
+             """,
+            new { LockName = InitializeDbLockName },
+            transaction);
+        transaction.Commit();
     }
 }
