@@ -38,11 +38,7 @@ public static class DapperDataProtectionExtensions
             c.TableName = config.TableName;
         });
         
-        var npgsqlDataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
-#if DEBUG
-        npgsqlDataSourceBuilder.ConnectionStringBuilder.IncludeErrorDetail = true;
-#endif
-        var npgsqlDataSource = npgsqlDataSourceBuilder.Build();
+        var npgsqlDataSource = new NpgsqlDataSourceBuilder(connectionString).Build();
 
         DefaultTypeMap.MatchNamesWithUnderscores = true;
 
