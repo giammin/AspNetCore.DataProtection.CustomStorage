@@ -74,4 +74,25 @@ Single test project: `tests/AspNetCore.DataProtection.CustomStorage.Tests` (xUni
 
 - `build.yml`: push to `main` and PRs: restore, build (Release), test.
 - `nuget-publish.yml`: on `v*` tags, builds with `-p:Version=${tag without v}`, tests, obtains a short-lived key via NuGet trusted publishing (`NuGet/login`, OIDC, `NUGET_USER` secret) and pushes `./build/*.symbols.nupkg`.
-- `github-release.yml`: creates a GitHub release on `v*` tags.
+- `github-release.yml`: creates a GitHub release on `v*` tags (`marvinpinto/action-automatic-releases`), with a changelog generated from the Conventional Commit messages on `main` since the previous tag.
+
+## Commits and Pull Requests
+
+Pull requests are squash-merged. The squash commit on `main` is the input of the release changelog, so its message must follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/).
+
+- **Subject.** The repository uses the `COMMIT_OR_PR_TITLE` squash setting: a single-commit PR uses the commit subject, a multi-commit PR uses the PR title. Both every commit subject and the PR title must therefore be a Conventional Commit header:
+  `<type>[(<scope>)][!]: <description>`
+  - `type`: `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `ci`, `chore`, `revert`.
+  - `scope` (optional): `core`, `dapper`, `sqlserver`, `postgresql`, `ci`, `deps`.
+  - `description`: imperative mood, lowercase first letter, no trailing period. Keep the whole subject within 72 characters, including the ` (#<PR>)` suffix GitHub appends.
+  - Never use a branch name as PR title (e.g. `Chore/update packages 2026 10`): it cannot be classified in the changelog.
+- **Body.** GitHub pre-fills the squash body with the list of branch commits. Replace it with a short summary of the change, followed by a blank line and the footers:
+  - `Closes #<issue>` for each resolved issue.
+  - `BREAKING CHANGE: <what breaks and how to migrate>` for breaking changes to the public API or the database schema. Add it even when the subject uses `!`.
+- **Merging from the CLI**, set the message explicitly instead of relying on the defaults:
+
+  ```bash
+  gh pr merge <PR> --squash \
+    --subject "fix(sqlserver): ensure friendly-name unique index on existing tables (#<PR>)" \
+    --body "$(printf '<summary>\n\nCloses #<issue>')"
+  ```
