@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
+using System.Xml;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.DataProtection.Repositories;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +13,7 @@ namespace AspNetCore.DataProtection.CustomStorage;
 /// handle retrieving and store the keys for the DataProtection with a generic storage
 /// </summary>
 /// <typeparam name="TStorage"></typeparam>
-public class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataProtectionStorage
+internal class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataProtectionStorage
 {
     private readonly IServiceProvider _services;
     private readonly ILogger _logger;
@@ -33,15 +33,29 @@ public class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataPro
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// A stored key whose XML is malformed is logged and skipped, so that a single corrupted row
+    /// does not make the whole key ring unusable.
+    /// </remarks>
     public IReadOnlyCollection<XElement> GetAllElements()
     {
         using var scope = _services.CreateScope();
         var storage = scope.ServiceProvider.GetRequiredService<TStorage>();
-        return storage.GetAll().Select(key =>
+        var elements = ImmutableArray.CreateBuilder<XElement>();
+        foreach (var key in storage.GetAll())
         {
             _logger.ReadingXmlFromKey(key.FriendlyName);
-            return XElement.Parse(key.Xml);
-        }).ToImmutableArray();
+            try
+            {
+                elements.Add(XElement.Parse(key.Xml));
+            }
+            catch (XmlException e)
+            {
+                _logger.LogSkippingMalformedKey(key.FriendlyName, e.LineNumber, e.LinePosition);
+            }
+        }
+
+        return elements.ToImmutable();
     }
 
     /// <inheritdoc />
@@ -53,7 +67,8 @@ public class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataPro
 
         var key = new DataProtectionKey
         {
-            FriendlyName = friendlyName?.Trim(),
+            // A blank name is stored as null: the unique index on the friendly name allows any number of nulls.
+            FriendlyName = string.IsNullOrWhiteSpace(friendlyName) ? null : friendlyName.Trim(),
             Xml = element.ToString(SaveOptions.DisableFormatting)
         };
         _logger.LogSavingKeyToStorage(key.FriendlyName, typeof(TStorage).Name);

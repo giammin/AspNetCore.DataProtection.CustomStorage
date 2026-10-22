@@ -14,7 +14,7 @@ public class StorageWrapperTests
      private readonly StorageWrapper<IDataProtectionStorage> _sut;
      private readonly IServiceProvider _services;
      private readonly ILoggerFactory _loggerFactory;
-     private readonly ILogger<StorageWrapper<IDataProtectionStorage>> _logger = Substitute.For<ILogger<StorageWrapper<IDataProtectionStorage>>>();
+     private readonly ILogger _logger = Substitute.For<ILogger>();
     private readonly IDataProtectionStorage _storage;
 
      public StorageWrapperTests()
@@ -33,7 +33,7 @@ public class StorageWrapperTests
          _services.GetService(typeof(IDataProtectionStorage)).Returns(_storage);
          _services.GetService(typeof(IDbDataProtectionStorage)).Returns(_storage);
         
-         _loggerFactory.CreateLogger<StorageWrapper<IDataProtectionStorage>>().Returns(_logger);
+         _loggerFactory.CreateLogger(Arg.Any<string>()).Returns(_logger);
          _sut = new StorageWrapper<IDataProtectionStorage>(_services, _loggerFactory);
      }
      [Fact]
@@ -160,5 +160,56 @@ public class StorageWrapperTests
 
         exception.Message.Should().Contain(KeyFriendlyName).And.NotContain(KeyMaterial);
         exception.InnerException.Should().BeSameAs(storageException);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("\t\r\n")]
+    public void StoreElement_FriendlyNameNullOrWhiteSpace_InsertsNullFriendlyName(string? friendlyName)
+    {
+        _sut.StoreElement(KeyElement, friendlyName);
+
+        _storage.Received(1).Insert(Arg.Is<DataProtectionKey>(key => key.FriendlyName == null));
+    }
+
+    [Fact]
+    public void StoreElement_FriendlyNameWithSurroundingWhiteSpace_InsertsTrimmedFriendlyName()
+    {
+        _sut.StoreElement(KeyElement, $"  {KeyFriendlyName}  ");
+
+        _storage.Received(1).Insert(Arg.Is<DataProtectionKey>(key => key.FriendlyName == KeyFriendlyName));
+    }
+
+    private const string MalformedFriendlyName = "key-malformed";
+    private static readonly string MalformedKeyXml = $"<key><masterKey>{KeyMaterial}</masterKey>";
+
+    [Fact]
+    public void GetAllElements_RowWithMalformedXml_SkipsRowAndReturnsValidKeys()
+    {
+        _storage.GetAll().Returns([
+            new DataProtectionKey { FriendlyName = MalformedFriendlyName, Xml = MalformedKeyXml },
+            new DataProtectionKey { FriendlyName = KeyFriendlyName, Xml = KeyElement.ToString() }
+        ]);
+
+        var elements = _sut.GetAllElements();
+
+        elements.Should().ContainSingle()
+            .Which.ToString().Should().Be(KeyElement.ToString());
+    }
+
+    [Fact]
+    public void GetAllElements_RowWithMalformedXml_LogsErrorNamingRowWithoutKeyXml()
+    {
+        var loggerFactory = new CapturingLoggerFactory();
+        var sut = new StorageWrapper<IDataProtectionStorage>(_services, loggerFactory);
+        _storage.GetAll().Returns([new DataProtectionKey { FriendlyName = MalformedFriendlyName, Xml = MalformedKeyXml }]);
+
+        sut.GetAllElements().Should().BeEmpty();
+
+        loggerFactory.Entries.Should().ContainSingle(e => e.Level == LogLevel.Error)
+            .Which.Should().Match<LogEntry>(e => e.EventId.Name == "SkippingMalformedKey" && e.Contains(MalformedFriendlyName));
+        loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
     }
 }

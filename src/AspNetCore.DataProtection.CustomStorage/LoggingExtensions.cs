@@ -28,4 +28,11 @@ internal static partial class LoggingExtensions
     /// </summary>
     [LoggerMessage(3, LogLevel.Error, "Error saving key '{FriendlyName}' with '{storage}'.", EventName = "ErrorSavingKeyToStorage")]
     public static partial void LogErrorSavingKeyToStorage(this ILogger logger, Exception exception, string? friendlyName, string storage);
+
+    /// <summary>
+    /// Logs an error message when a stored key cannot be parsed and is excluded from the key ring.
+    /// Neither the key XML nor the parser exception is logged because both may contain unencrypted key material.
+    /// </summary>
+    [LoggerMessage(5, LogLevel.Error, "Skipping key '{FriendlyName}': its XML is malformed (line {LineNumber}, position {LinePosition}).", EventName = "SkippingMalformedKey")]
+    public static partial void LogSkippingMalformedKey(this ILogger logger, string? friendlyName, int lineNumber, int linePosition);
 }
