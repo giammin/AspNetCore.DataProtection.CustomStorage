@@ -13,7 +13,7 @@ namespace AspNetCore.DataProtection.CustomStorage.Tests;
 
 public class DeletableStorageWrapperTests
 {
-    private const string KeyMaterial = "c2VjcmV0LWtleS1tYXRlcmlhbA==";
+    private const string KeyMaterial = TestConstants.KeyMaterial;
 
     private readonly IServiceProvider _services;
     private readonly IDeletableDataProtectionStorage _storage;

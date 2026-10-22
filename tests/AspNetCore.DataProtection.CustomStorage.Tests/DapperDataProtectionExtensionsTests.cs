@@ -30,35 +30,21 @@ public class DapperDataProtectionExtensionsTests
         _services.GetService(typeof(IDbDataProtectionStorage)).Returns(_provider);
         _services.GetService(typeof(ILoggerFactory)).Returns(loggerFactory);
     }
-    [Fact]
-    public void UseDapperDataProtection_InitializeTable_ExecInitializeDb()
+
+    [Theory]
+    [InlineData(true, 1)]
+    [InlineData(false, 0)]
+    public void UseDapperDataProtection_InitializeTable_InitializesDbOnlyWhenEnabled(bool initializeTable, int expectedCalls)
     {
-        var config = new DapperDataProtectionConfig()
+        _options.Value.Returns(new DapperDataProtectionConfig
         {
             SchemaName = "",
             TableName = "",
-            InitializeTable = true
-        };
-        _options.Value.Returns(config);
+            InitializeTable = initializeTable
+        });
 
         _services.UseDapperDataProtection();
 
-        _provider.Received(1).InitializeDb();
+        _provider.Received(expectedCalls).InitializeDb();
     }
-    [Fact]
-    public void UseDapperDataProtection_InitializeTableFalse_NotInitializeDb()
-    {
-        var config = new DapperDataProtectionConfig()
-        {
-            SchemaName = "",
-            TableName = "",
-            InitializeTable = false
-        };
-        _options.Value.Returns(config);
-
-        _services.UseDapperDataProtection();
-
-        _provider.DidNotReceiveWithAnyArgs().InitializeDb();
-    }
-
 }

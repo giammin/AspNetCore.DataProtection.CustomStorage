@@ -12,7 +12,7 @@ using NSubstitute;
 using Xunit;
 
 namespace AspNetCore.DataProtection.CustomStorage.Tests.PostgreSQL;
-public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlContainerFixture>
+public class PostgreSqlDataProtectionRepositoryTests
 {
     private readonly PostgreSqlContainerFixture _fixture;
     private readonly PostgreSQLDataProtectionRepository _sut;
@@ -123,24 +123,19 @@ public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlCo
     public void InitializeDb_CustomSchemaAndTable_PersistsKeysInConfiguredTable()
     {
         const string schemaName = "custom_keys";
-        var tableName = $"keys_{Guid.NewGuid().ToString("N")[..12]}";
+        var tableName = NewTableName();
         using (var connection = _fixture.NpgsqlDataSource.OpenConnection())
         {
             connection.Execute($"CREATE SCHEMA IF NOT EXISTS {schemaName};");
         }
-        var options = Substitute.For<IOptionsSnapshot<DapperDataProtectionConfig>>();
-        options.Value.Returns(new DapperDataProtectionConfig { SchemaName = schemaName, TableName = tableName });
-        var sut = new PostgreSQLDataProtectionRepository(_fixture.NpgsqlDataSource, options);
+        var sut = CreateSut(schemaName, tableName);
         var key = new DataProtectionKey { FriendlyName = "CustomSchemaKey", Xml = "Xml" };
 
         sut.InitializeDb();
         sut.Insert(key);
 
         sut.GetAll().Should().ContainSingle(x => x.FriendlyName == key.FriendlyName && x.Xml == key.Xml);
-        using (var connection = _fixture.NpgsqlDataSource.OpenConnection())
-        {
-            connection.ExecuteScalar<long>($"SELECT COUNT(*) FROM {schemaName}.{tableName};").Should().Be(1);
-        }
+        CountRows(schemaName, tableName).Should().Be(1);
         _sut.GetAll().Should().NotContain(x => x.FriendlyName == key.FriendlyName);
     }
 
@@ -155,16 +150,10 @@ public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlCo
         // Several rounds, because a single round does not always hit the race.
         for (var round = 0; round < 5; round++)
         {
-            var tableName = $"keys_{Guid.NewGuid().ToString("N")[..12]}";
-            var options = Substitute.For<IOptionsSnapshot<DapperDataProtectionConfig>>();
-            options.Value.Returns(new DapperDataProtectionConfig
-            {
-                SchemaName = Constants.DefaultSchema,
-                TableName = tableName
-            });
+            var tableName = NewTableName();
             // One repository per call, as on separate nodes starting at the same time.
             var suts = Enumerable.Range(0, callCount)
-                .Select(_ => new PostgreSQLDataProtectionRepository(_fixture.NpgsqlDataSource, options))
+                .Select(_ => CreateSut(Constants.DefaultSchema, tableName))
                 .ToList();
             using var barrier = new Barrier(callCount);
 
@@ -187,7 +176,7 @@ public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlCo
     public void InitializeDb_SchemaMissing_CreatesSchemaAndTable()
     {
         var schemaName = $"schema_{Guid.NewGuid().ToString("N")[..12]}";
-        var tableName = $"keys_{Guid.NewGuid().ToString("N")[..12]}";
+        var tableName = NewTableName();
         var sut = CreateSut(schemaName, tableName);
 
         sut.InitializeDb();
@@ -202,7 +191,7 @@ public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlCo
     {
         // A reserved word is accepted unquoted after a schema qualifier, but not as the schema name itself.
         const string schemaName = "order";
-        var tableName = $"keys_{Guid.NewGuid().ToString("N")[..12]}";
+        var tableName = NewTableName();
         var sut = CreateSut(schemaName, tableName);
         var key = new DataProtectionKey { FriendlyName = "ReservedWordKey", Xml = "Xml" };
 
@@ -264,14 +253,8 @@ public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlCo
     [Fact]
     public void Delete_LaterDeletionFails_RollsBackEarlierDeletions()
     {
-        var tableName = $"keys_{Guid.NewGuid().ToString("N")[..12]}";
-        var options = Substitute.For<IOptionsSnapshot<DapperDataProtectionConfig>>();
-        options.Value.Returns(new DapperDataProtectionConfig
-        {
-            SchemaName = Constants.DefaultSchema,
-            TableName = tableName
-        });
-        var sut = new PostgreSQLDataProtectionRepository(_fixture.NpgsqlDataSource, options);
+        var tableName = NewTableName();
+        var sut = CreateSut(Constants.DefaultSchema, tableName);
         sut.InitializeDb();
         sut.Insert(new DataProtectionKey { FriendlyName = "DeleteFirst", Xml = "xml1" });
         sut.Insert(new DataProtectionKey { FriendlyName = "DeleteFails", Xml = "xml2" });
@@ -294,6 +277,8 @@ public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlCo
 
         sut.GetAll().Select(x => x.FriendlyName).Should().BeEquivalentTo("DeleteFirst", "DeleteFails");
     }
+
+    private static string NewTableName() => $"keys_{Guid.NewGuid().ToString("N")[..12]}";
 
     private PostgreSQLDataProtectionRepository CreateSut(string schemaName, string tableName)
     {

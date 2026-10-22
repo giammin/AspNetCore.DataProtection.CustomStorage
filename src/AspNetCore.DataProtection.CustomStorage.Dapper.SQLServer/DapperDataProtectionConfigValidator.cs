@@ -15,9 +15,11 @@ internal sealed partial class DapperDataProtectionConfigValidator : IValidateOpt
     internal const int MaxSchemaNameLength = 128;
 
     /// <summary>
-    /// Maximum table name length, which leaves room for the derived index name <c>IX_{TableName}_FriendlyName</c>.
+    /// Maximum table name length, which leaves room for the derived index name <c>IX_{TableName}_FriendlyName</c>,
+    /// the longest name derived from the table name.
     /// </summary>
-    internal const int MaxTableNameLength = MaxSchemaNameLength - 16;
+    internal static readonly int MaxTableNameLength =
+        MaxSchemaNameLength - SQLServerDataProtectionRepository.GetIndexName(string.Empty).Length;
 
     /// <inheritdoc />
     public ValidateOptionsResult Validate(string? name, DapperDataProtectionConfig options)

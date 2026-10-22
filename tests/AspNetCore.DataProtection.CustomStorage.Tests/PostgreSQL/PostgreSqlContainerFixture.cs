@@ -9,6 +9,9 @@ using Respawn;
 using Testcontainers.PostgreSql;
 using Xunit;
 
+// One container for the whole assembly: tests that do not use the default table work on their own tables.
+[assembly: AssemblyFixture(typeof(AspNetCore.DataProtection.CustomStorage.Tests.PostgreSQL.PostgreSqlContainerFixture))]
+
 namespace AspNetCore.DataProtection.CustomStorage.Tests.PostgreSQL;
 
 public class PostgreSqlContainerFixture : IAsyncLifetime

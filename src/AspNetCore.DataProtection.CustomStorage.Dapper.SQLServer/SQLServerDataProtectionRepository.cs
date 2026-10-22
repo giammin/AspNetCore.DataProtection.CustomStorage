@@ -115,7 +115,7 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
     /// </remarks>
     public void InitializeDb()
     {
-        var indexName = $"IX_{_config.TableName}_{nameof(DataProtectionKeyEntity.FriendlyName)}";
+        var indexName = GetIndexName(_config.TableName);
         using var connection = _connectionFactory.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
@@ -170,6 +170,8 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
             transaction);
         transaction.Commit();
     }
+
+    internal static string GetIndexName(string tableName) => $"IX_{tableName}_{nameof(DataProtectionKeyEntity.FriendlyName)}";
 
     private static string QuoteIdentifier(string name) => $"[{name.Replace("]", "]]")}]";
 }

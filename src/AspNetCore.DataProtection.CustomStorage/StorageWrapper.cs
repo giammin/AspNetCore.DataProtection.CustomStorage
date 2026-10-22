@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.DataProtection.Repositories;
@@ -41,25 +42,27 @@ internal class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataP
     {
         using var scope = _services.CreateScope();
         var storage = scope.ServiceProvider.GetRequiredService<TStorage>();
-        var elements = ImmutableArray.CreateBuilder<XElement>();
+        return ParseKeys(storage).Select(k => k.Element).ToImmutableArray();
+    }
+
+    /// <summary>
+    /// read every stored key and parse its XML
+    /// </summary>
+    /// <param name="storage">the storage to read</param>
+    /// <returns>each stored key with its parsed element; keys with malformed XML are logged and skipped</returns>
+    protected IEnumerable<(DataProtectionKey Key, XElement Element)> ParseKeys(IDataProtectionStorage storage)
+    {
         foreach (var key in storage.GetAll())
         {
             var element = TryParseKey(key);
             if (element is not null)
             {
-                elements.Add(element);
+                yield return (key, element);
             }
         }
-
-        return elements.ToImmutable();
     }
 
-    /// <summary>
-    /// parse the XML of a stored key
-    /// </summary>
-    /// <param name="key">the stored key</param>
-    /// <returns>the parsed element, or <c>null</c> when the XML is malformed (the key is logged and skipped)</returns>
-    protected XElement? TryParseKey(DataProtectionKey key)
+    private XElement? TryParseKey(DataProtectionKey key)
     {
         _logger.ReadingXmlFromKey(key.FriendlyName);
         try

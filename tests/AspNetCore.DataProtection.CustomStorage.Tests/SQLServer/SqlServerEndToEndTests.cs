@@ -18,7 +18,7 @@ namespace AspNetCore.DataProtection.CustomStorage.Tests.SQLServer;
 /// <summary>
 /// End-to-end tests that wire the SQL Server provider through the public extension methods and real DI.
 /// </summary>
-public class SqlServerEndToEndTests : IClassFixture<SqlServerContainerFixture>
+public class SqlServerEndToEndTests
 {
     private const string ApplicationName = "AspNetCore.DataProtection.CustomStorage.Tests";
     private const string Purpose = "end-to-end";
