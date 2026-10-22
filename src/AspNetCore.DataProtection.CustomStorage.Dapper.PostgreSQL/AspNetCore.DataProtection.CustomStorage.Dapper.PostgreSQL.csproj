@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<VersionPrefix>$(VersionPrefixDataProtectionDapperPostgreSQL)</VersionPrefix>
-		<PackageTags>${PackageTags};dapper;sql server</PackageTags>
+		<PackageTags>$(PackageTags);dapper;postgresql</PackageTags>
 		<Description>Support for storing AspNetCore data protection keys using Dapper in PostgreSQL.</Description>
 	</PropertyGroup>
   <ItemGroup>

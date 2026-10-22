@@ -15,8 +15,8 @@ namespace AspNetCore.DataProtection.CustomStorage;
 /// <typeparam name="TStorage"></typeparam>
 internal class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataProtectionStorage
 {
-    private readonly IServiceProvider _services;
-    private readonly ILogger _logger;
+    protected readonly IServiceProvider _services;
+    protected readonly ILogger _logger;
     /// <summary>
     /// 
     /// </summary>
@@ -44,18 +44,33 @@ internal class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataP
         var elements = ImmutableArray.CreateBuilder<XElement>();
         foreach (var key in storage.GetAll())
         {
-            _logger.ReadingXmlFromKey(key.FriendlyName);
-            try
+            var element = TryParseKey(key);
+            if (element is not null)
             {
-                elements.Add(XElement.Parse(key.Xml));
-            }
-            catch (XmlException e)
-            {
-                _logger.LogSkippingMalformedKey(key.FriendlyName, e.LineNumber, e.LinePosition);
+                elements.Add(element);
             }
         }
 
         return elements.ToImmutable();
+    }
+
+    /// <summary>
+    /// parse the XML of a stored key
+    /// </summary>
+    /// <param name="key">the stored key</param>
+    /// <returns>the parsed element, or <c>null</c> when the XML is malformed (the key is logged and skipped)</returns>
+    protected XElement? TryParseKey(DataProtectionKey key)
+    {
+        _logger.ReadingXmlFromKey(key.FriendlyName);
+        try
+        {
+            return XElement.Parse(key.Xml);
+        }
+        catch (XmlException e)
+        {
+            _logger.LogSkippingMalformedKey(key.FriendlyName, e.LineNumber, e.LinePosition);
+            return null;
+        }
     }
 
     /// <inheritdoc />
