@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<VersionPrefix>$(VersionPrefixDataProtectionDapperSQLServer)</VersionPrefix>
-		<PackageTags>${PackageTags};dapper;sql server</PackageTags>
+		<PackageTags>$(PackageTags);dapper;sqlserver</PackageTags>
 		<Description>Support for storing AspNetCore data protection keys using Dapper in SQLServer.</Description>
 	</PropertyGroup>
 	<ItemGroup>
