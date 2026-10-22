@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using AspNetCore.DataProtection.CustomStorage.Dapper;
 using AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL;
-using Dapper;
 using DotNet.Testcontainers.Builders;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -45,7 +44,6 @@ public class PostgreSqlContainerFixture : IAsyncLifetime
             }
         };
         NpgsqlDataSource = npgsqlDataSourceBuilder.Build();
-        DefaultTypeMap.MatchNamesWithUnderscores = true;
         SeedDatabase();
         await using var dbConnection = await NpgsqlDataSource.OpenConnectionAsync();
         
