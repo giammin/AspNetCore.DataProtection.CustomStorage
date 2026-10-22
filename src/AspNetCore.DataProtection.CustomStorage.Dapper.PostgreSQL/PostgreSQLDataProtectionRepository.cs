@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
@@ -30,7 +31,7 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
     /// </summary>
     /// <param name="dataSource">the db connection</param>
     /// <param name="options">repository configuration</param>
-    public PostgreSQLDataProtectionRepository(NpgsqlDataSource dataSource,
+    public PostgreSQLDataProtectionRepository([FromKeyedServices(Constants.DataSourceServiceKey)] NpgsqlDataSource dataSource,
         IOptionsSnapshot<DapperDataProtectionConfig> options)
     {
         _dataSource = dataSource;

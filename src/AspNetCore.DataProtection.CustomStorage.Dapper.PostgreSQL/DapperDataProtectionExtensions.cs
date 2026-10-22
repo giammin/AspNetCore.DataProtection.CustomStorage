@@ -37,9 +37,10 @@ public static class DapperDataProtectionExtensions
             c.TableName = config.TableName;
         });
         
-        var npgsqlDataSource = new NpgsqlDataSourceBuilder(connectionString).Build();
-
-        builder.Services.AddSingleton(npgsqlDataSource);
+        // Keyed, so that a data source registered by the application is neither replaced nor used;
+        // created by a factory, so that the container owns and disposes it.
+        builder.Services.AddKeyedSingleton(Constants.DataSourceServiceKey,
+            (_, _) => new NpgsqlDataSourceBuilder(connectionString).Build());
 
         builder.Services.AddScoped<IDbDataProtectionStorage, PostgreSQLDataProtectionRepository>();
         builder.PersistKeysToStorage<IDbDataProtectionStorage>();

@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Npgsql;
 using Xunit;
 
 namespace AspNetCore.DataProtection.CustomStorage.Tests.PostgreSQL;
@@ -73,16 +74,49 @@ public class PostgreSqlEndToEndTests : IClassFixture<PostgreSqlContainerFixture>
         GetStoredFriendlyNames(tableName).Should().Equal($"key-{kept.KeyId:D}");
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Protect_ApplicationRegistersOwnDataSource_DataSourcesStaySeparate(bool applicationRegistersFirst)
+    {
+        var tableName = NewTableName();
+        // The application data source targets a database that does not exist, so that any key
+        // operation routed through it fails.
+        var applicationConnectionString = new NpgsqlConnectionStringBuilder(_fixture.ConnectionString)
+        {
+            Database = "application_database_does_not_exist"
+        }.ConnectionString;
+        using var applicationDataSource = NpgsqlDataSource.Create(applicationConnectionString);
+        using var services = BuildServiceProvider(tableName, applicationDataSource, applicationRegistersFirst);
+        var protector = services.GetRequiredService<IDataProtectionProvider>().CreateProtector(Purpose);
+
+        var protectedPayload = protector.Protect("payload");
+
+        services.GetRequiredService<NpgsqlDataSource>().Should().BeSameAs(applicationDataSource);
+        protector.Unprotect(protectedPayload).Should().Be("payload");
+        GetStoredFriendlyNames(tableName).Should().ContainSingle();
+    }
+
     // PostgreSQL folds unquoted identifiers to lower case; keep the name short enough for derived index names.
     private static string NewTableName() => $"keys_{Guid.NewGuid().ToString("N")[..12]}";
 
-    private ServiceProvider BuildServiceProvider(string tableName)
+    private ServiceProvider BuildServiceProvider(string tableName,
+        NpgsqlDataSource? applicationDataSource = null,
+        bool applicationRegistersFirst = false)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance);
+        if (applicationDataSource is not null && applicationRegistersFirst)
+        {
+            services.AddSingleton(applicationDataSource);
+        }
         services.AddDataProtection()
             .SetApplicationName(ApplicationName)
             .PersistKeysWithDapperInPostgreSQL(_fixture.ConnectionString, config => config.TableName = tableName);
+        if (applicationDataSource is not null && !applicationRegistersFirst)
+        {
+            services.AddSingleton(applicationDataSource);
+        }
 
         var provider = services.BuildServiceProvider();
         provider.UseDapperDataProtection();

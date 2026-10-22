@@ -117,6 +117,10 @@ app.Services.UseDapperDataProtection();
 app.Run();
 ```
 
+The provider registers its `NpgsqlDataSource` as a keyed service and disposes it with the service
+provider. An `NpgsqlDataSource` registered by the application (for example with
+`AddNpgsqlDataSource`) is neither replaced nor used for the keys, whatever the registration order.
+
 ## Configuration
 
 Both providers accept an optional `Action<DapperDataProtectionConfig>` to override the defaults:
