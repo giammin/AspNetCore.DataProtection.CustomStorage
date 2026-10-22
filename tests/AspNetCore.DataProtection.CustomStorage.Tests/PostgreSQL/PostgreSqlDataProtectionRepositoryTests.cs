@@ -184,6 +184,38 @@ public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlCo
     }
 
     [Fact]
+    public void InitializeDb_SchemaMissing_CreatesSchemaAndTable()
+    {
+        var schemaName = $"schema_{Guid.NewGuid().ToString("N")[..12]}";
+        var tableName = $"keys_{Guid.NewGuid().ToString("N")[..12]}";
+        var sut = CreateSut(schemaName, tableName);
+
+        sut.InitializeDb();
+        sut.Insert(new DataProtectionKey { FriendlyName = "MissingSchemaKey", Xml = "Xml" });
+
+        CountRows(schemaName, tableName).Should().Be(1);
+        sut.Invoking(x => x.InitializeDb()).Should().NotThrow();
+    }
+
+    [Fact]
+    public void InitializeDb_ReservedWordSchemaName_PersistsKeys()
+    {
+        // A reserved word is accepted unquoted after a schema qualifier, but not as the schema name itself.
+        const string schemaName = "order";
+        var tableName = $"keys_{Guid.NewGuid().ToString("N")[..12]}";
+        var sut = CreateSut(schemaName, tableName);
+        var key = new DataProtectionKey { FriendlyName = "ReservedWordKey", Xml = "Xml" };
+
+        sut.InitializeDb();
+        sut.Insert(key);
+
+        var stored = sut.GetAll().Should().ContainSingle().Subject;
+        stored.FriendlyName.Should().Be(key.FriendlyName);
+        sut.Delete([stored]);
+        CountRows(schemaName, tableName).Should().Be(0);
+    }
+
+    [Fact]
     public void Delete_NullKeys_ThrowsArgumentNullException()
     {
         _sut.Invoking(x => x.Delete(null!))
@@ -261,5 +293,18 @@ public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlCo
         sut.Invoking(x => x.Delete(keys)).Should().Throw<PostgresException>().WithMessage("*delete failed*");
 
         sut.GetAll().Select(x => x.FriendlyName).Should().BeEquivalentTo("DeleteFirst", "DeleteFails");
+    }
+
+    private PostgreSQLDataProtectionRepository CreateSut(string schemaName, string tableName)
+    {
+        var options = Substitute.For<IOptionsSnapshot<DapperDataProtectionConfig>>();
+        options.Value.Returns(new DapperDataProtectionConfig { SchemaName = schemaName, TableName = tableName });
+        return new PostgreSQLDataProtectionRepository(_fixture.NpgsqlDataSource, options);
+    }
+
+    private long CountRows(string schemaName, string tableName)
+    {
+        using var connection = _fixture.NpgsqlDataSource.OpenConnection();
+        return connection.ExecuteScalar<long>($"""SELECT COUNT(*) FROM "{schemaName}"."{tableName}";""");
     }
 }

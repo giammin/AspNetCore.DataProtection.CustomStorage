@@ -87,7 +87,8 @@ public class PostgreSqlEndToEndTests : IClassFixture<PostgreSqlContainerFixture>
             Database = "application_database_does_not_exist"
         }.ConnectionString;
         using var applicationDataSource = NpgsqlDataSource.Create(applicationConnectionString);
-        using var services = BuildServiceProvider(tableName, applicationDataSource, applicationRegistersFirst);
+        using var services = BuildServiceProvider(tableName,
+            applicationDataSource: applicationDataSource, applicationRegistersFirst: applicationRegistersFirst);
         var protector = services.GetRequiredService<IDataProtectionProvider>().CreateProtector(Purpose);
 
         var protectedPayload = protector.Protect("payload");
@@ -97,10 +98,22 @@ public class PostgreSqlEndToEndTests : IClassFixture<PostgreSqlContainerFixture>
         GetStoredFriendlyNames(tableName).Should().ContainSingle();
     }
 
-    // PostgreSQL folds unquoted identifiers to lower case; keep the name short enough for derived index names.
+    [Fact]
+    public void Protect_MissingReservedWordSchemaAndTable_StoresKeysInConfiguredTable()
+    {
+        using var services = BuildServiceProvider("order", "user");
+        var protector = services.GetRequiredService<IDataProtectionProvider>().CreateProtector(Purpose);
+
+        protector.Unprotect(protector.Protect("payload")).Should().Be("payload");
+
+        GetStoredFriendlyNames("order", "user").Should().ContainSingle();
+    }
+
+    // Names must be lowercase; keep the name short enough for derived index names.
     private static string NewTableName() => $"keys_{Guid.NewGuid().ToString("N")[..12]}";
 
     private ServiceProvider BuildServiceProvider(string tableName,
+        string schemaName = Constants.DefaultSchema,
         NpgsqlDataSource? applicationDataSource = null,
         bool applicationRegistersFirst = false)
     {
@@ -112,7 +125,11 @@ public class PostgreSqlEndToEndTests : IClassFixture<PostgreSqlContainerFixture>
         }
         services.AddDataProtection()
             .SetApplicationName(ApplicationName)
-            .PersistKeysWithDapperInPostgreSQL(_fixture.ConnectionString, config => config.TableName = tableName);
+            .PersistKeysWithDapperInPostgreSQL(_fixture.ConnectionString, config =>
+            {
+                config.SchemaName = schemaName;
+                config.TableName = tableName;
+            });
         if (applicationDataSource is not null && !applicationRegistersFirst)
         {
             services.AddSingleton(applicationDataSource);
@@ -123,10 +140,10 @@ public class PostgreSqlEndToEndTests : IClassFixture<PostgreSqlContainerFixture>
         return provider;
     }
 
-    private List<string?> GetStoredFriendlyNames(string tableName)
+    private List<string?> GetStoredFriendlyNames(string tableName, string schemaName = Constants.DefaultSchema)
     {
         using var connection = _fixture.NpgsqlDataSource.OpenConnection();
         return connection.Query<string?>(
-            $"SELECT friendly_name FROM {Constants.DefaultSchema}.{tableName};").AsList();
+            $"""SELECT friendly_name FROM "{schemaName}"."{tableName}";""").AsList();
     }
 }

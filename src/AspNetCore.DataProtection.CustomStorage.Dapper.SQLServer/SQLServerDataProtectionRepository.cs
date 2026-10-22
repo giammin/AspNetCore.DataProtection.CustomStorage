@@ -14,6 +14,7 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
     private const string InitializeDbLockResource = "AspNetCore.DataProtection.CustomStorage.InitializeDb";
     private readonly SqlConnectionFactory _connectionFactory;
     private readonly DapperDataProtectionConfig _config;
+    private readonly string _tableName;
 
     private string GetAllQuery() => 
             $"""
@@ -22,7 +23,7 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
                     [{nameof(DataProtectionKeyEntity.InsertDate)}],
                     [{nameof(DataProtectionKeyEntity.FriendlyName)}],
                     [{nameof(DataProtectionKeyEntity.Xml)}]
-                FROM [{_config.SchemaName}].[{_config.TableName}];
+                FROM {_tableName};
                 """;
     /// <summary>
     /// create an instance of <see cref="SQLServerDataProtectionRepository"/>
@@ -34,6 +35,7 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
     {
         _connectionFactory = connectionFactory;
         _config = options.Value;
+        _tableName = $"{QuoteIdentifier(_config.SchemaName)}.{QuoteIdentifier(_config.TableName)}";
     }
 
     /// <inheritdoc />
@@ -58,7 +60,7 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
         using var connection = _connectionFactory.CreateConnection();
         connection.Execute(
             $"""
-             INSERT INTO [{_config.SchemaName}].[{_config.TableName}](
+             INSERT INTO {_tableName}(
                     {nameof(DataProtectionKeyEntity.FriendlyName)}, 
                     {nameof(DataProtectionKeyEntity.Xml)}) 
              VALUES (
@@ -87,7 +89,7 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
         // Dapper executes the statement once per id, in order.
         connection.Execute(
             $"""
-             DELETE FROM [{_config.SchemaName}].[{_config.TableName}]
+             DELETE FROM {_tableName}
              WHERE [{nameof(DataProtectionKeyEntity.Id)}] = @{nameof(DataProtectionKeyEntity.Id)}
              """,
             ids.Select(id => new { Id = id }),
@@ -107,6 +109,7 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
 
     /// <inheritdoc />
     /// <remarks>
+    /// Creates the schema, the table and the friendly-name unique index, each one only if it is missing.
     /// Safe to call concurrently from several instances: the initialization is serialized
     /// with an exclusive application lock held until the transaction ends.
     /// </remarks>
@@ -117,6 +120,8 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
         connection.Open();
         using var transaction = connection.BeginTransaction();
         // Without the lock, concurrent existence checks can all pass and the later CREATE statements fail.
+        // Names are passed as parameters wherever SQL accepts them; elsewhere they are quoted identifiers.
+        // CREATE SCHEMA must be the only statement in its batch, hence the dynamic SQL.
         // The unique index is ensured independently of the table, so that an existing table
         // without the index (created manually, or with the index dropped) gets it restored.
         connection.Execute(
@@ -125,34 +130,46 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
                EXEC @lockResult = sp_getapplock @Resource = @LockResource, @LockMode = N'Exclusive', @LockOwner = N'Transaction';
                IF @lockResult < 0
                   THROW 50000, N'Cannot acquire the application lock to initialize the data protection keys table.', 1;
+               IF SCHEMA_ID(@SchemaName) IS NULL
+               BEGIN
+                   DECLARE @createSchema nvarchar(max) = N'CREATE SCHEMA ' + QUOTENAME(@SchemaName);
+                   EXEC(@createSchema);
+               END;
                IF NOT EXISTS(SELECT t.[object_id]
                FROM [sys].[tables] t
                   JOIN sys.schemas s ON s.schema_id=t.schema_id
-               WHERE t.[name] = N'{_config.TableName}' AND s.name=N'{_config.SchemaName}')
+               WHERE t.[name] = @TableName AND s.name = @SchemaName)
                BEGIN
-                   CREATE TABLE [{_config.SchemaName}].[{_config.TableName}](
+                   CREATE TABLE {_tableName}(
                        [{nameof(DataProtectionKeyEntity.Id)}] [int] IDENTITY(1,1) NOT NULL,
-                       [{nameof(DataProtectionKeyEntity.InsertDate)}] [datetime2] NOT NULL CONSTRAINT [DF_{_config.TableName}_{nameof(DataProtectionKeyEntity.InsertDate)}] DEFAULT sysutcdatetime(),
+                       [{nameof(DataProtectionKeyEntity.InsertDate)}] [datetime2] NOT NULL CONSTRAINT {QuoteIdentifier($"DF_{_config.TableName}_{nameof(DataProtectionKeyEntity.InsertDate)}")} DEFAULT sysutcdatetime(),
                       [{nameof(DataProtectionKeyEntity.FriendlyName)}] [nvarchar](256) NULL,
                       [{nameof(DataProtectionKeyEntity.Xml)}] [nvarchar](max) NOT NULL,
-                      CONSTRAINT [PK_{_config.TableName}] PRIMARY KEY CLUSTERED ([{nameof(DataProtectionKeyEntity.Id)}] ASC) ON [PRIMARY]
+                      CONSTRAINT {QuoteIdentifier($"PK_{_config.TableName}")} PRIMARY KEY CLUSTERED ([{nameof(DataProtectionKeyEntity.Id)}] ASC) ON [PRIMARY]
                   ) ON [PRIMARY];
                END;
                IF NOT EXISTS(SELECT i.[index_id]
                FROM [sys].[indexes] i
-               WHERE i.[object_id] = OBJECT_ID(N'[{_config.SchemaName}].[{_config.TableName}]') AND i.[name] = N'{indexName}')
+               WHERE i.[object_id] = OBJECT_ID(QUOTENAME(@SchemaName) + N'.' + QUOTENAME(@TableName)) AND i.[name] = @IndexName)
                BEGIN
                   IF EXISTS(SELECT [{nameof(DataProtectionKeyEntity.FriendlyName)}]
-                  FROM [{_config.SchemaName}].[{_config.TableName}]
+                  FROM {_tableName}
                   WHERE [{nameof(DataProtectionKeyEntity.FriendlyName)}] IS NOT NULL
                   GROUP BY [{nameof(DataProtectionKeyEntity.FriendlyName)}]
                   HAVING COUNT(*) > 1)
-                     THROW 50000, N'Cannot create unique index [{indexName}] on [{_config.SchemaName}].[{_config.TableName}]: the table contains duplicate non-null [{nameof(DataProtectionKeyEntity.FriendlyName)}] values. Remove the duplicates and initialize again.', 1;
-                  CREATE UNIQUE NONCLUSTERED INDEX [{indexName}] ON [{_config.SchemaName}].[{_config.TableName}]([{nameof(DataProtectionKeyEntity.FriendlyName)}] ASC) WHERE [{nameof(DataProtectionKeyEntity.FriendlyName)}] IS NOT NULL ON [PRIMARY];
+                  BEGIN
+                     DECLARE @message nvarchar(2048) = N'Cannot create unique index ' + QUOTENAME(@IndexName)
+                        + N' on ' + QUOTENAME(@SchemaName) + N'.' + QUOTENAME(@TableName)
+                        + N': the table contains duplicate non-null [{nameof(DataProtectionKeyEntity.FriendlyName)}] values. Remove the duplicates and initialize again.';
+                     THROW 50000, @message, 1;
+                  END;
+                  CREATE UNIQUE NONCLUSTERED INDEX {QuoteIdentifier(indexName)} ON {_tableName}([{nameof(DataProtectionKeyEntity.FriendlyName)}] ASC) WHERE [{nameof(DataProtectionKeyEntity.FriendlyName)}] IS NOT NULL ON [PRIMARY];
                END
                """,
-            new { LockResource = InitializeDbLockResource },
+            new { LockResource = InitializeDbLockResource, _config.SchemaName, _config.TableName, IndexName = indexName },
             transaction);
         transaction.Commit();
     }
+
+    private static string QuoteIdentifier(string name) => $"[{name.Replace("]", "]]")}]";
 }

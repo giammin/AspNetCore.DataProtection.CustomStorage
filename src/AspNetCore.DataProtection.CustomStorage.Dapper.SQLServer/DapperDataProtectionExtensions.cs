@@ -1,6 +1,8 @@
 ﻿using System;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer;
 
@@ -28,12 +30,16 @@ public static class DapperDataProtectionExtensions
             TableName = Constants.TableName
         };
         configAction?.Invoke(config);
-        builder.Services.Configure<DapperDataProtectionConfig>(c =>
-        {
-            c.InitializeTable = config.InitializeTable;
-            c.SchemaName = config.SchemaName;
-            c.TableName = config.TableName;
-        });
+        builder.Services.AddOptions<DapperDataProtectionConfig>()
+            .Configure(c =>
+            {
+                c.InitializeTable = config.InitializeTable;
+                c.SchemaName = config.SchemaName;
+                c.TableName = config.TableName;
+            })
+            .ValidateOnStart();
+        builder.Services.TryAddEnumerable(ServiceDescriptor
+            .Singleton<IValidateOptions<DapperDataProtectionConfig>, DapperDataProtectionConfigValidator>());
 
         builder.Services.AddSingleton(_=>new SqlConnectionFactory(connectionString));
         builder.Services.AddScoped<IDbDataProtectionStorage, SQLServerDataProtectionRepository>();
