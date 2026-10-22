@@ -18,6 +18,7 @@ namespace AspNetCore.DataProtection.CustomStorage.Tests.SQLServer;
 /// <summary>
 /// End-to-end tests that wire the SQL Server provider through the public extension methods and real DI.
 /// </summary>
+[Collection(nameof(SqlServerCollection))]
 public class SqlServerEndToEndTests
 {
     private const string ApplicationName = "AspNetCore.DataProtection.CustomStorage.Tests";
@@ -32,7 +33,7 @@ public class SqlServerEndToEndTests
     [Fact]
     public void Protect_UnprotectWithSameServiceProvider_RoundTrips()
     {
-        var tableName = NewTableName();
+        var tableName = SqlServerContainerFixture.NewTableName();
         using var services = BuildServiceProvider(tableName);
         var protector = services.GetRequiredService<IDataProtectionProvider>().CreateProtector(Purpose);
 
@@ -45,7 +46,7 @@ public class SqlServerEndToEndTests
     [Fact]
     public void Protect_UnprotectWithSecondServiceProviderSharingDatabase_RoundTrips()
     {
-        var tableName = NewTableName();
+        var tableName = SqlServerContainerFixture.NewTableName();
         using var first = BuildServiceProvider(tableName);
         using var second = BuildServiceProvider(tableName);
 
@@ -60,7 +61,7 @@ public class SqlServerEndToEndTests
     [Fact]
     public void DeleteKeys_KeySelected_DeletesItFromTable()
     {
-        var tableName = NewTableName();
+        var tableName = SqlServerContainerFixture.NewTableName();
         using var services = BuildServiceProvider(tableName);
         // XmlKeyManager exposes DeleteKeys but does not implement IDeletableKeyManager.
         var keyManager = (XmlKeyManager)services.GetRequiredService<IKeyManager>();
@@ -85,8 +86,6 @@ public class SqlServerEndToEndTests
 
         GetStoredFriendlyNames("Order", schemaName).Should().ContainSingle();
     }
-
-    private static string NewTableName() => $"Keys_{Guid.NewGuid():N}";
 
     private ServiceProvider BuildServiceProvider(string tableName, string schemaName = Constants.DefaultSchema)
     {

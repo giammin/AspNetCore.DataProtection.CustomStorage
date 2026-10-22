@@ -107,7 +107,6 @@ public class StorageWrapperTests
     [Fact]
     public void StoreElement_KeySaved_DoesNotLogKeyXml()
     {
-
         _sut.StoreElement(KeyElement, KeyFriendlyName);
 
         _loggerFactory.Entries.Should().Contain(e => e.Contains(KeyFriendlyName));

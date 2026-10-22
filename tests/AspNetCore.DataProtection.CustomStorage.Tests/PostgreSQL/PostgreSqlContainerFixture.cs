@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using AspNetCore.DataProtection.CustomStorage.Dapper;
 using AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL;
 using DotNet.Testcontainers.Builders;
@@ -9,10 +10,15 @@ using Respawn;
 using Testcontainers.PostgreSql;
 using Xunit;
 
-// One container for the whole assembly: tests that do not use the default table work on their own tables.
-[assembly: AssemblyFixture(typeof(AspNetCore.DataProtection.CustomStorage.Tests.PostgreSQL.PostgreSqlContainerFixture))]
-
 namespace AspNetCore.DataProtection.CustomStorage.Tests.PostgreSQL;
+
+/// <summary>
+/// Shares one container among the PostgreSQL test classes. A collection fixture, unlike an assembly fixture,
+/// is created only when tests of the collection are selected, so unit-only runs do not need Docker.
+/// Tests that do not use the default table work on their own tables.
+/// </summary>
+[CollectionDefinition(nameof(PostgreSqlCollection))]
+public class PostgreSqlCollection : ICollectionFixture<PostgreSqlContainerFixture>;
 
 public class PostgreSqlContainerFixture : IAsyncLifetime
 {
@@ -26,6 +32,11 @@ public class PostgreSqlContainerFixture : IAsyncLifetime
             Substitute.For<IOptionsSnapshot<DapperDataProtectionConfig>>();
 
     private Respawner _respawner = null!;
+
+    /// <summary>
+    /// Returns a unique table name, for tests that must not share the default table.
+    /// </summary>
+    public static string NewTableName() => $"keys_{Guid.NewGuid().ToString("N")[..12]}";
 
     public PostgreSqlContainerFixture()
     {

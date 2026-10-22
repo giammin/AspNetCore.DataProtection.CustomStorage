@@ -12,6 +12,7 @@ using NSubstitute;
 using Xunit;
 
 namespace AspNetCore.DataProtection.CustomStorage.Tests.PostgreSQL;
+[Collection(nameof(PostgreSqlCollection))]
 public class PostgreSqlDataProtectionRepositoryTests
 {
     private readonly PostgreSqlContainerFixture _fixture;
@@ -123,7 +124,7 @@ public class PostgreSqlDataProtectionRepositoryTests
     public void InitializeDb_CustomSchemaAndTable_PersistsKeysInConfiguredTable()
     {
         const string schemaName = "custom_keys";
-        var tableName = NewTableName();
+        var tableName = PostgreSqlContainerFixture.NewTableName();
         using (var connection = _fixture.NpgsqlDataSource.OpenConnection())
         {
             connection.Execute($"CREATE SCHEMA IF NOT EXISTS {schemaName};");
@@ -150,7 +151,7 @@ public class PostgreSqlDataProtectionRepositoryTests
         // Several rounds, because a single round does not always hit the race.
         for (var round = 0; round < 5; round++)
         {
-            var tableName = NewTableName();
+            var tableName = PostgreSqlContainerFixture.NewTableName();
             // One repository per call, as on separate nodes starting at the same time.
             var suts = Enumerable.Range(0, callCount)
                 .Select(_ => CreateSut(Constants.DefaultSchema, tableName))
@@ -176,7 +177,7 @@ public class PostgreSqlDataProtectionRepositoryTests
     public void InitializeDb_SchemaMissing_CreatesSchemaAndTable()
     {
         var schemaName = $"schema_{Guid.NewGuid().ToString("N")[..12]}";
-        var tableName = NewTableName();
+        var tableName = PostgreSqlContainerFixture.NewTableName();
         var sut = CreateSut(schemaName, tableName);
 
         sut.InitializeDb();
@@ -191,7 +192,7 @@ public class PostgreSqlDataProtectionRepositoryTests
     {
         // A reserved word is accepted unquoted after a schema qualifier, but not as the schema name itself.
         const string schemaName = "order";
-        var tableName = NewTableName();
+        var tableName = PostgreSqlContainerFixture.NewTableName();
         var sut = CreateSut(schemaName, tableName);
         var key = new DataProtectionKey { FriendlyName = "ReservedWordKey", Xml = "Xml" };
 
@@ -253,7 +254,7 @@ public class PostgreSqlDataProtectionRepositoryTests
     [Fact]
     public void Delete_LaterDeletionFails_RollsBackEarlierDeletions()
     {
-        var tableName = NewTableName();
+        var tableName = PostgreSqlContainerFixture.NewTableName();
         var sut = CreateSut(Constants.DefaultSchema, tableName);
         sut.InitializeDb();
         sut.Insert(new DataProtectionKey { FriendlyName = "DeleteFirst", Xml = "xml1" });
@@ -277,8 +278,6 @@ public class PostgreSqlDataProtectionRepositoryTests
 
         sut.GetAll().Select(x => x.FriendlyName).Should().BeEquivalentTo("DeleteFirst", "DeleteFails");
     }
-
-    private static string NewTableName() => $"keys_{Guid.NewGuid().ToString("N")[..12]}";
 
     private PostgreSQLDataProtectionRepository CreateSut(string schemaName, string tableName)
     {

@@ -13,6 +13,7 @@ using Xunit;
 using Constants = AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer.Constants;
 
 namespace AspNetCore.DataProtection.CustomStorage.Tests.SQLServer;
+[Collection(nameof(SqlServerCollection))]
 public class SqlServerDataProtectionRepositoryTests
 {
     private readonly SqlServerContainerFixture _fixture;
@@ -153,7 +154,7 @@ public class SqlServerDataProtectionRepositoryTests
     [Fact]
     public void Delete_LaterDeletionFails_RollsBackEarlierDeletions()
     {
-        var tableName = NewTableName();
+        var tableName = SqlServerContainerFixture.NewTableName();
         var sut = CreateSut(tableName);
         sut.InitializeDb();
         sut.Insert(new DataProtectionKey { FriendlyName = "DeleteFirst", Xml = "xml1" });
@@ -178,7 +179,7 @@ public class SqlServerDataProtectionRepositoryTests
     [Fact]
     public void InitializeDb_TableExistsWithoutIndex_CreatesIndex()
     {
-        var tableName = NewTableName();
+        var tableName = SqlServerContainerFixture.NewTableName();
         var sut = CreateSut(tableName);
         sut.InitializeDb();
         DropFriendlyNameIndex(tableName);
@@ -195,7 +196,7 @@ public class SqlServerDataProtectionRepositoryTests
     [Fact]
     public void InitializeDb_TableAndIndexExist_Succeeds()
     {
-        var tableName = NewTableName();
+        var tableName = SqlServerContainerFixture.NewTableName();
         var sut = CreateSut(tableName);
         sut.InitializeDb();
 
@@ -207,7 +208,7 @@ public class SqlServerDataProtectionRepositoryTests
     [Fact]
     public void InitializeDb_TableWithoutIndexHasDuplicateFriendlyNames_ThrowsClearError()
     {
-        var tableName = NewTableName();
+        var tableName = SqlServerContainerFixture.NewTableName();
         var sut = CreateSut(tableName);
         sut.InitializeDb();
         DropFriendlyNameIndex(tableName);
@@ -225,7 +226,7 @@ public class SqlServerDataProtectionRepositoryTests
     [Fact]
     public void InitializeDb_TableWithoutIndexHasDuplicateNullFriendlyNames_CreatesIndex()
     {
-        var tableName = NewTableName();
+        var tableName = SqlServerContainerFixture.NewTableName();
         var sut = CreateSut(tableName);
         sut.InitializeDb();
         DropFriendlyNameIndex(tableName);
@@ -240,7 +241,7 @@ public class SqlServerDataProtectionRepositoryTests
     [Fact]
     public void InitializeDb_NewTable_InsertDateIsDatetime2WithUtcDefault()
     {
-        var tableName = NewTableName();
+        var tableName = SqlServerContainerFixture.NewTableName();
         var sut = CreateSut(tableName);
 
         sut.InitializeDb();
@@ -263,7 +264,7 @@ public class SqlServerDataProtectionRepositoryTests
     public void InitializeDb_CustomSchemaAndTable_PersistsKeysInConfiguredTable()
     {
         const string schemaName = "custom_keys";
-        var tableName = NewTableName();
+        var tableName = SqlServerContainerFixture.NewTableName();
         using (var connection = _fixture.SqlConnectionFactory.CreateConnection())
         {
             connection.Execute($"IF SCHEMA_ID(N'{schemaName}') IS NULL EXEC(N'CREATE SCHEMA [{schemaName}]');");
@@ -291,7 +292,7 @@ public class SqlServerDataProtectionRepositoryTests
         // Several rounds, because a single round does not always hit the race.
         for (var round = 0; round < 5; round++)
         {
-            var tableName = NewTableName();
+            var tableName = SqlServerContainerFixture.NewTableName();
             // One repository per call, as on separate nodes starting at the same time.
             var suts = Enumerable.Range(0, callCount).Select(_ => CreateSut(tableName)).ToList();
             using var barrier = new Barrier(callCount);
@@ -311,7 +312,7 @@ public class SqlServerDataProtectionRepositoryTests
     public void InitializeDb_SchemaMissing_CreatesSchemaAndTable()
     {
         var schemaName = $"Schema_{Guid.NewGuid():N}";
-        var tableName = NewTableName();
+        var tableName = SqlServerContainerFixture.NewTableName();
         var sut = CreateSut(tableName, schemaName);
 
         sut.InitializeDb();
@@ -320,8 +321,6 @@ public class SqlServerDataProtectionRepositoryTests
         CountRows(schemaName, tableName).Should().Be(1);
         sut.Invoking(x => x.InitializeDb()).Should().NotThrow();
     }
-
-    private static string NewTableName() => $"Keys_{Guid.NewGuid():N}";
 
     private SQLServerDataProtectionRepository CreateSut(string tableName, string schemaName = Constants.DefaultSchema)
     {

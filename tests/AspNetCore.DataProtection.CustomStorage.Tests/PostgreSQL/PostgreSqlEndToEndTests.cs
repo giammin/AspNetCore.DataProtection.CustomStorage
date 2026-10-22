@@ -18,6 +18,7 @@ namespace AspNetCore.DataProtection.CustomStorage.Tests.PostgreSQL;
 /// <summary>
 /// End-to-end tests that wire the PostgreSQL provider through the public extension methods and real DI.
 /// </summary>
+[Collection(nameof(PostgreSqlCollection))]
 public class PostgreSqlEndToEndTests
 {
     private const string ApplicationName = "AspNetCore.DataProtection.CustomStorage.Tests";
@@ -32,7 +33,7 @@ public class PostgreSqlEndToEndTests
     [Fact]
     public void Protect_UnprotectWithSameServiceProvider_RoundTrips()
     {
-        var tableName = NewTableName();
+        var tableName = PostgreSqlContainerFixture.NewTableName();
         using var services = BuildServiceProvider(tableName);
         var protector = services.GetRequiredService<IDataProtectionProvider>().CreateProtector(Purpose);
 
@@ -45,7 +46,7 @@ public class PostgreSqlEndToEndTests
     [Fact]
     public void Protect_UnprotectWithSecondServiceProviderSharingDatabase_RoundTrips()
     {
-        var tableName = NewTableName();
+        var tableName = PostgreSqlContainerFixture.NewTableName();
         using var first = BuildServiceProvider(tableName);
         using var second = BuildServiceProvider(tableName);
 
@@ -60,7 +61,7 @@ public class PostgreSqlEndToEndTests
     [Fact]
     public void DeleteKeys_KeySelected_DeletesItFromTable()
     {
-        var tableName = NewTableName();
+        var tableName = PostgreSqlContainerFixture.NewTableName();
         using var services = BuildServiceProvider(tableName);
         // XmlKeyManager exposes DeleteKeys but does not implement IDeletableKeyManager.
         var keyManager = (XmlKeyManager)services.GetRequiredService<IKeyManager>();
@@ -79,7 +80,7 @@ public class PostgreSqlEndToEndTests
     [InlineData(false)]
     public void Protect_ApplicationRegistersOwnDataSource_DataSourcesStaySeparate(bool applicationRegistersFirst)
     {
-        var tableName = NewTableName();
+        var tableName = PostgreSqlContainerFixture.NewTableName();
         // The application data source targets a database that does not exist, so that any key
         // operation routed through it fails.
         var applicationConnectionString = new NpgsqlConnectionStringBuilder(_fixture.ConnectionString)
@@ -110,8 +111,6 @@ public class PostgreSqlEndToEndTests
     }
 
     // Names must be lowercase; keep the name short enough for derived index names.
-    private static string NewTableName() => $"keys_{Guid.NewGuid().ToString("N")[..12]}";
-
     private ServiceProvider BuildServiceProvider(string tableName,
         string schemaName = Constants.DefaultSchema,
         NpgsqlDataSource? applicationDataSource = null,
