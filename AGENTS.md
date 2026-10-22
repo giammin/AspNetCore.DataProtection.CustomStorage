@@ -65,7 +65,7 @@ Both repositories use raw SQL via Dapper. They differ in naming conventions:
 | Columns | PascalCase, via `nameof(DataProtectionKeyEntity.X)` | snake_case literals |
 | Unique index on friendly name | Filtered NONCLUSTERED (`WHERE ... IS NOT NULL`) | `CREATE UNIQUE INDEX IF NOT EXISTS` (NULLs allowed) |
 
-- The PostgreSQL provider sets the global `Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true` so snake_case columns map to `DataProtectionKeyEntity`. This affects the whole host process (documented in the README).
+- The PostgreSQL `SELECT` aliases each snake_case column to its `DataProtectionKeyEntity` property name (`AS "{nameof(...)}"`). Never set the process-wide `Dapper.DefaultTypeMap.MatchNamesWithUnderscores`: it changes column mapping for every Dapper query in the host application.
 - `Delete()` requires `DataProtectionKeyEntity` instances (as returned by `GetAll()`) and deletes by `Id`, row by row in order, in one transaction.
 - Schema and table names are interpolated directly into SQL strings, not parameterized or validated.
 - Defaults are in each provider's `Constants.cs`. Keep the table DDL in sync with the "Database schema" section of `README.md`.

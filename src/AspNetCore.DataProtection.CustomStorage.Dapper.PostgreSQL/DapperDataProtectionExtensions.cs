@@ -1,5 +1,4 @@
 ﻿using System;
-using Dapper;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
@@ -39,8 +38,6 @@ public static class DapperDataProtectionExtensions
         });
         
         var npgsqlDataSource = new NpgsqlDataSourceBuilder(connectionString).Build();
-
-        DefaultTypeMap.MatchNamesWithUnderscores = true;
 
         builder.Services.AddSingleton(npgsqlDataSource);
 

@@ -102,6 +102,21 @@ public class PostgreSqlDataProtectionRepositoryTests: IClassFixture<PostgreSqlCo
             .And.OnlyContain(x => x.Id > 0 && x.InsertDate != default);
         entities.Select(x => x.Id).Should().OnlyHaveUniqueItems();
     }
+    [Fact]
+    public async Task GetAllAsync_MatchNamesWithUnderscoresDisabled_MapsAllColumns()
+    {
+        DefaultTypeMap.MatchNamesWithUnderscores = false;
+        await _fixture.ResetDatabaseAsync();
+        var key = new DataProtectionKey { FriendlyName = "MappingFriendlyName", Xml = "MappingXml" };
+        _sut.Insert(key);
+
+        var entity = (await _sut.GetAllAsync()).Should().ContainSingle().Subject;
+
+        entity.Id.Should().BePositive();
+        entity.InsertDate.Should().NotBe(default);
+        entity.FriendlyName.Should().Be(key.FriendlyName);
+        entity.Xml.Should().Be(key.Xml);
+    }
 
     [Fact]
     public void InitializeDb_CustomSchemaAndTable_PersistsKeysInConfiguredTable()

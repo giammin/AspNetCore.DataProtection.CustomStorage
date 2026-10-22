@@ -16,10 +16,10 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
     private string GetAllQuery() => 
     $"""
         SELECT
-            id,
-            insert_date ,
-            friendly_name,
-            xml
+            id AS "{nameof(DataProtectionKeyEntity.Id)}",
+            insert_date AS "{nameof(DataProtectionKeyEntity.InsertDate)}",
+            friendly_name AS "{nameof(DataProtectionKeyEntity.FriendlyName)}",
+            xml AS "{nameof(DataProtectionKeyEntity.Xml)}"
         FROM {_config.SchemaName}.{_config.TableName};
     """;
 

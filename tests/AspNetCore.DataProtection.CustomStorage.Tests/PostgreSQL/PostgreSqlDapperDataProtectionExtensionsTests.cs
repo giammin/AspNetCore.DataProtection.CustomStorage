@@ -1,5 +1,6 @@
 using System.Linq;
 using AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL;
+using Dapper;
 using FluentAssertions;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,5 +25,16 @@ public class PostgreSqlDapperDataProtectionExtensionsTests
 
         new NpgsqlConnectionStringBuilder(dataSource.ConnectionString).IncludeErrorDetail
             .Should().Be(expected);
+    }
+
+    [Fact]
+    public void PersistKeysWithDapperInPostgreSQL_DoesNotEnableMatchNamesWithUnderscores()
+    {
+        DefaultTypeMap.MatchNamesWithUnderscores = false;
+        var services = new ServiceCollection();
+
+        services.AddDataProtection().PersistKeysWithDapperInPostgreSQL("Host=localhost;Database=test");
+
+        DefaultTypeMap.MatchNamesWithUnderscores.Should().BeFalse();
     }
 }

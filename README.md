@@ -117,10 +117,6 @@ app.Services.UseDapperDataProtection();
 app.Run();
 ```
 
-> **Note:** the PostgreSQL provider enables Dapper's snake_case column mapping globally
-> (`Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true`). Keep this in mind if the same
-> application uses Dapper elsewhere.
-
 ## Configuration
 
 Both providers accept an optional `Action<DapperDataProtectionConfig>` to override the defaults:
