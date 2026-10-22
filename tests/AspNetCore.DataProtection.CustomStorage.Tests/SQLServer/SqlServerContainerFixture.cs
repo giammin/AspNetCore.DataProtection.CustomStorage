@@ -13,11 +13,11 @@ using Constants = AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer.Const
 namespace AspNetCore.DataProtection.CustomStorage.Tests.SQLServer;
 public class SqlServerContainerFixture : IAsyncLifetime
 {
-    private readonly MsSqlContainer _dbContainer = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")
+    private readonly MsSqlContainer _dbContainer = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-CU27-GDR1-ubuntu-22.04")
         .WithPassword(Guid.NewGuid().ToString())
-        .WithExposedPort(1433).WithPortBinding(1433, true)
         .Build();
 
+    public string ConnectionString { get; private set; } = null!;
     public SqlConnectionFactory SqlConnectionFactory { get; private set; } = null!;
     public readonly IOptionsSnapshot<DapperDataProtectionConfig> Options =
             Substitute.For<IOptionsSnapshot<DapperDataProtectionConfig>>();
@@ -44,10 +44,8 @@ public class SqlServerContainerFixture : IAsyncLifetime
             InitialCatalog = initialCatalog,
         };
 
-        SqlConnectionFactory = new SqlConnectionFactory(connectionStringBuilder.ConnectionString
-                //quick hack for just my configuration (docker on wsl2)
-                .Replace("localhost", "127.0.0.1")
-        );
+        ConnectionString = connectionStringBuilder.ConnectionString;
+        SqlConnectionFactory = new SqlConnectionFactory(ConnectionString);
 
         SeedDatabase();
         await using var dbConnection = SqlConnectionFactory.CreateConnection();

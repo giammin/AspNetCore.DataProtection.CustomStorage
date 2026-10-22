@@ -68,6 +68,10 @@ public class SqlServerDataProtectionRepositoryTests : IClassFixture<SqlServerCon
             Xml = xml
         };
         _sut.Insert(key);
+
+        var stored = _sut.GetAll().Should().ContainSingle().Subject;
+        stored.FriendlyName.Should().Be(friendlyName);
+        stored.Xml.Should().Be(xml);
     }
     [Fact]
     public async Task GetAll_NoKeys_ReturnsEmpty()
@@ -161,17 +165,43 @@ public class SqlServerDataProtectionRepositoryTests : IClassFixture<SqlServerCon
         FriendlyNameIndexExists(tableName).Should().BeTrue();
     }
 
+    [Fact]
+    public void InitializeDb_CustomSchemaAndTable_PersistsKeysInConfiguredTable()
+    {
+        const string schemaName = "custom_keys";
+        var tableName = NewTableName();
+        using (var connection = _fixture.SqlConnectionFactory.CreateConnection())
+        {
+            connection.Execute($"IF SCHEMA_ID(N'{schemaName}') IS NULL EXEC(N'CREATE SCHEMA [{schemaName}]');");
+        }
+        var sut = CreateSut(tableName, schemaName);
+        var key = new DataProtectionKey { FriendlyName = "CustomSchemaKey", Xml = "Xml" };
+
+        sut.InitializeDb();
+        sut.Insert(key);
+
+        sut.GetAll().Should().ContainSingle(x => x.FriendlyName == key.FriendlyName && x.Xml == key.Xml);
+        CountRows(schemaName, tableName).Should().Be(1);
+        _sut.GetAll().Should().NotContain(x => x.FriendlyName == key.FriendlyName);
+    }
+
     private static string NewTableName() => $"Keys_{Guid.NewGuid():N}";
 
-    private SQLServerDataProtectionRepository CreateSut(string tableName)
+    private SQLServerDataProtectionRepository CreateSut(string tableName, string schemaName = Constants.DefaultSchema)
     {
         var options = Substitute.For<IOptionsSnapshot<DapperDataProtectionConfig>>();
         options.Value.Returns(new DapperDataProtectionConfig
         {
-            SchemaName = Constants.DefaultSchema,
+            SchemaName = schemaName,
             TableName = tableName
         });
         return new SQLServerDataProtectionRepository(_fixture.SqlConnectionFactory, options);
+    }
+
+    private int CountRows(string schemaName, string tableName)
+    {
+        using var connection = _fixture.SqlConnectionFactory.CreateConnection();
+        return connection.ExecuteScalar<int>($"SELECT COUNT(*) FROM [{schemaName}].[{tableName}];");
     }
 
     private void DropFriendlyNameIndex(string tableName)
