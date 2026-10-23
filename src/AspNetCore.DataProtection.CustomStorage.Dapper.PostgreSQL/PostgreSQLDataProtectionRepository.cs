@@ -17,15 +17,7 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
     private readonly NpgsqlDataSource _dataSource;
     private readonly DapperDataProtectionConfig _config;
     private readonly string _tableName;
-    private string GetAllQuery() => 
-    $"""
-        SELECT
-            id AS "{nameof(DataProtectionKeyEntity.Id)}",
-            insert_date AS "{nameof(DataProtectionKeyEntity.InsertDate)}",
-            friendly_name AS "{nameof(DataProtectionKeyEntity.FriendlyName)}",
-            xml AS "{nameof(DataProtectionKeyEntity.Xml)}"
-        FROM {_tableName};
-    """;
+    private readonly string _getAllQuery;
 
     /// <summary>
     /// create an instance of <see cref="PostgreSQLDataProtectionRepository"/>
@@ -38,20 +30,29 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
         _dataSource = dataSource;
         _config = options.Value;
         _tableName = $"{QuoteIdentifier(_config.SchemaName)}.{QuoteIdentifier(_config.TableName)}";
+        _getAllQuery =
+            $"""
+                SELECT
+                    id AS "{nameof(DataProtectionKeyEntity.Id)}",
+                    insert_date AS "{nameof(DataProtectionKeyEntity.InsertDate)}",
+                    friendly_name AS "{nameof(DataProtectionKeyEntity.FriendlyName)}",
+                    xml AS "{nameof(DataProtectionKeyEntity.Xml)}"
+                FROM {_tableName};
+                """;
     }
 
     /// <inheritdoc />
     public IEnumerable<DataProtectionKey> GetAll()
     {
         using var connection = _dataSource.CreateConnection();
-        return connection.Query<DataProtectionKeyEntity>(GetAllQuery());
+        return connection.Query<DataProtectionKeyEntity>(_getAllQuery);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<DataProtectionKeyEntity>> GetAllAsync()
     {
         await using var connection = _dataSource.CreateConnection();
-        return await connection.QueryAsync<DataProtectionKeyEntity>(GetAllQuery());
+        return await connection.QueryAsync<DataProtectionKeyEntity>(_getAllQuery);
     }
 
     /// <inheritdoc />

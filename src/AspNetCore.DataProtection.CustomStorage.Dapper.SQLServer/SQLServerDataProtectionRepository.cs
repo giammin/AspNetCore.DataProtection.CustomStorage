@@ -16,16 +16,8 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
     private readonly SqlConnectionFactory _connectionFactory;
     private readonly DapperDataProtectionConfig _config;
     private readonly string _tableName;
+    private readonly string _getAllQuery;
 
-    private string GetAllQuery() => 
-            $"""
-                SELECT
-                    [{nameof(DataProtectionKeyEntity.Id)}],
-                    [{nameof(DataProtectionKeyEntity.InsertDate)}],
-                    [{nameof(DataProtectionKeyEntity.FriendlyName)}],
-                    [{nameof(DataProtectionKeyEntity.Xml)}]
-                FROM {_tableName};
-                """;
     /// <summary>
     /// create an instance of <see cref="SQLServerDataProtectionRepository"/>
     /// </summary>
@@ -38,20 +30,29 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
         _connectionFactory = connectionFactory;
         _config = options.Value;
         _tableName = $"{QuoteIdentifier(_config.SchemaName)}.{QuoteIdentifier(_config.TableName)}";
+        _getAllQuery =
+            $"""
+                SELECT
+                    [{nameof(DataProtectionKeyEntity.Id)}],
+                    [{nameof(DataProtectionKeyEntity.InsertDate)}],
+                    [{nameof(DataProtectionKeyEntity.FriendlyName)}],
+                    [{nameof(DataProtectionKeyEntity.Xml)}]
+                FROM {_tableName};
+                """;
     }
 
     /// <inheritdoc />
     public IEnumerable<DataProtectionKey> GetAll() 
     {
         using var connection = _connectionFactory.CreateConnection();
-        return connection.Query<DataProtectionKeyEntity>(GetAllQuery());
+        return connection.Query<DataProtectionKeyEntity>(_getAllQuery);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<DataProtectionKeyEntity>> GetAllAsync()
     {
         await using var connection = _connectionFactory.CreateConnection();
-        return await connection.QueryAsync<DataProtectionKeyEntity>(GetAllQuery());
+        return await connection.QueryAsync<DataProtectionKeyEntity>(_getAllQuery);
     }
 
     /// <inheritdoc />
@@ -63,8 +64,8 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
         connection.Execute(
             $"""
              INSERT INTO {_tableName}(
-                    {nameof(DataProtectionKeyEntity.FriendlyName)}, 
-                    {nameof(DataProtectionKeyEntity.Xml)}) 
+                    [{nameof(DataProtectionKeyEntity.FriendlyName)}],
+                    [{nameof(DataProtectionKeyEntity.Xml)}])
              VALUES (
                     @{nameof(DataProtectionKeyEntity.FriendlyName)},
                     @{nameof(DataProtectionKeyEntity.Xml)})
