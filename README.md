@@ -342,8 +342,8 @@ if (keyManager is XmlKeyManager { CanDeleteKeys: true } xmlKeyManager)
 The selected keys are deleted with a single `Delete` call. The database providers delete the rows
 by `Id`, in deletion order, in one transaction: either every selected key is deleted or none is.
 If the storage throws, the error is logged (event `ErrorDeletingKeysFromStorage`) and `DeleteKeys`
-returns `false`. Each deleted key is logged by friendly name (event `DeletingKeyFromStorage`); the
-key XML is never logged. A stored key whose XML is malformed is not offered for deletion.
+returns `false`. Once the deletion has succeeded, each deleted key is logged by friendly name (event
+`DeletedKeyFromStorage`); the key XML is never logged. A stored key whose XML is malformed is not offered for deletion.
 
 ## How it works
 

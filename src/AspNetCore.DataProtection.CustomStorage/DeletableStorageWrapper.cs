@@ -53,21 +53,22 @@ internal class DeletableStorageWrapper<TStorage> : StorageWrapper<TStorage>, IDe
             return true;
         }
 
-        foreach (var key in keysToDelete)
-        {
-            _logger.LogDeletingKeyFromStorage(key.FriendlyName, typeof(TStorage).Name);
-        }
-
         try
         {
             storage.Delete(keysToDelete);
-            return true;
         }
         catch (Exception e)
         {
             _logger.LogErrorDeletingKeysFromStorage(e, keysToDelete.Count, typeof(TStorage).Name);
             return false;
         }
+
+        foreach (var key in keysToDelete)
+        {
+            _logger.LogDeletedKeyFromStorage(key.FriendlyName, typeof(TStorage).Name);
+        }
+
+        return true;
     }
 
     private sealed class DeletableElement(DataProtectionKey key, XElement element) : IDeletableElement
