@@ -19,23 +19,40 @@ internal sealed partial class DapperDataProtectionConfigValidator : IValidateOpt
     /// </summary>
     internal const int MaxNameLength = 63;
 
+    /// <summary>
+    /// Maximum combined length of the schema and table names, which leaves room for the derived index name
+    /// <c>ix_{SchemaName}_{TableName}_friendly_name</c>, the longest name derived from them.
+    /// PostgreSQL would silently truncate a longer name, so two tables could get the same index name.
+    /// </summary>
+    internal static readonly int MaxCombinedNameLength =
+        MaxNameLength - PostgreSQLDataProtectionRepository.GetIndexName(string.Empty, string.Empty).Length;
+
     /// <inheritdoc />
     public ValidateOptionsResult Validate(string? name, DapperDataProtectionConfig options)
     {
         var failures = new List<string>();
         Validate(nameof(DapperDataProtectionConfig.SchemaName), options.SchemaName, failures);
         Validate(nameof(DapperDataProtectionConfig.TableName), options.TableName, failures);
+        if (failures.Count == 0 && options.SchemaName.Length + options.TableName.Length > MaxCombinedNameLength)
+        {
+            failures.Add(
+                $"{nameof(DapperDataProtectionConfig)}.{nameof(DapperDataProtectionConfig.SchemaName)} '{options.SchemaName}' " +
+                $"and {nameof(DapperDataProtectionConfig)}.{nameof(DapperDataProtectionConfig.TableName)} '{options.TableName}' " +
+                $"are too long: together they must be at most {MaxCombinedNameLength} characters long, so that the " +
+                $"derived index name fits the PostgreSQL limit of {MaxNameLength} characters.");
+        }
+
         return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
     }
 
     private static void Validate(string optionName, string? value, List<string> failures)
     {
-        if (value is null || value.Length > MaxNameLength || !IdentifierRegex().IsMatch(value))
+        if (value is null || !IdentifierRegex().IsMatch(value))
         {
             failures.Add(
                 $"{nameof(DapperDataProtectionConfig)}.{optionName} '{value}' is not a valid PostgreSQL name: " +
-                "it must start with a lowercase letter or an underscore, contain only lowercase letters, digits " +
-                $"and underscores, and be at most {MaxNameLength} characters long.");
+                "it must start with a lowercase letter or an underscore and contain only lowercase letters, digits " +
+                "and underscores.");
         }
     }
 

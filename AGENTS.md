@@ -67,9 +67,9 @@ Both repositories use raw SQL via Dapper. They differ in naming conventions:
 
 - The PostgreSQL `SELECT` aliases each snake_case column to its `DataProtectionKeyEntity` property name (`AS "{nameof(...)}"`). Never set the process-wide `Dapper.DefaultTypeMap.MatchNamesWithUnderscores`: it changes column mapping for every Dapper query in the host application.
 - `Delete()` requires `DataProtectionKeyEntity` instances (as returned by `GetAll()`) and deletes by `Id`, row by row in order, in one transaction.
-- Schema and table names are validated at startup (SQL Server: `^[A-Za-z_][A-Za-z0-9_]*`, schema <= 128, table <= 112 to fit `IX_{table}_FriendlyName`; PostgreSQL: lowercase only, <= 63) and always quoted (`[...]` / `"..."`, with the closing quote escaped). PostgreSQL names are lowercase because earlier versions did not quote them: a mixed-case name would silently target a new, empty table.
+- Schema and table names are validated at startup (SQL Server: `^[A-Za-z_][A-Za-z0-9_]*`, schema <= 128, table <= 112 to fit `IX_{table}_FriendlyName`; PostgreSQL: lowercase only, schema + table <= 45 to fit `ix_{schema}_{table}_friendly_name` in 63) and always quoted (`[...]` / `"..."`, with the closing quote escaped). PostgreSQL names are lowercase because earlier versions did not quote them: a mixed-case name would silently target a new, empty table.
 - SQL Server passes names as parameters wherever T-SQL accepts them (existence checks, `QUOTENAME`, the duplicate-index error message).
-- `InitializeDb()` creates a missing schema. It checks existence first (`SCHEMA_ID` / `pg_namespace`), because PostgreSQL's `CREATE SCHEMA IF NOT EXISTS` requires the database CREATE privilege even when the schema exists.
+- `InitializeDb()` creates the schema, the table and the index only when missing. On PostgreSQL it checks existence first (`pg_namespace`, `pg_tables`, `pg_indexes`), because PostgreSQL checks privileges before `IF NOT EXISTS`: a user without CREATE on the database or schema, or without ownership of the table, would otherwise fail on every start.
 - Defaults are in each provider's `Constants.cs`. Keep the table DDL in sync with the "Database schema" section of `README.md`.
 
 ### Testing
