@@ -123,8 +123,9 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
         connection.Execute("SELECT pg_advisory_xact_lock(hashtext(@LockName));",
             new { LockName = InitializeDbLockName },
             transaction);
-        // CREATE SCHEMA IF NOT EXISTS requires the CREATE privilege on the database even when the schema
-        // exists, so it is executed only when the schema is missing.
+        // PostgreSQL checks privileges before IF NOT EXISTS: CREATE SCHEMA requires the CREATE privilege on the
+        // database, CREATE TABLE the CREATE privilege on the schema and CREATE INDEX the ownership of the table,
+        // even when the object exists. Each object is therefore created only when it is missing.
         var schemaExists = connection.ExecuteScalar<bool>(
             "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = @SchemaName);",
             new { _config.SchemaName },
@@ -135,24 +136,49 @@ public class PostgreSQLDataProtectionRepository : IDbDataProtectionStorage
                 transaction: transaction);
         }
 
-        connection.Execute($"""
-             CREATE TABLE IF NOT EXISTS {_tableName}
-              (
-                 id INTEGER generated always as identity,
-                 insert_date timestamp with time zone NOT NULL default NOW(),
-                 friendly_name character varying(256) COLLATE pg_catalog."default" NULL,
-                 xml text COLLATE pg_catalog."default" NOT NULL,
-                 CONSTRAINT {QuoteIdentifier($"pk_{_config.SchemaName}_{_config.TableName}")} PRIMARY KEY (id)
-              );
-               
-              CREATE UNIQUE INDEX IF NOT EXISTS {QuoteIdentifier($"ix_{_config.SchemaName}_{_config.TableName}_friendly_name")}
-              ON {_tableName} USING btree
-              (friendly_name COLLATE pg_catalog."default" ASC NULLS LAST)
-              TABLESPACE pg_default;
-             """,
-            transaction: transaction);
+        var tableExists = connection.ExecuteScalar<bool>(
+            "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_tables WHERE schemaname = @SchemaName AND tablename = @TableName);",
+            new { _config.SchemaName, _config.TableName },
+            transaction);
+        if (!tableExists)
+        {
+            connection.Execute($"""
+                 CREATE TABLE IF NOT EXISTS {_tableName}
+                  (
+                     id INTEGER generated always as identity,
+                     insert_date timestamp with time zone NOT NULL default NOW(),
+                     friendly_name character varying(256) COLLATE pg_catalog."default" NULL,
+                     xml text COLLATE pg_catalog."default" NOT NULL,
+                     CONSTRAINT {QuoteIdentifier($"pk_{_config.SchemaName}_{_config.TableName}")} PRIMARY KEY (id)
+                  );
+                 """,
+                transaction: transaction);
+        }
+
+        var indexName = GetIndexName(_config.SchemaName, _config.TableName);
+        var indexExists = connection.ExecuteScalar<bool>(
+            "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_indexes WHERE schemaname = @SchemaName AND indexname = @IndexName);",
+            new { _config.SchemaName, IndexName = indexName },
+            transaction);
+        if (!indexExists)
+        {
+            connection.Execute($"""
+                 CREATE UNIQUE INDEX IF NOT EXISTS {QuoteIdentifier(indexName)}
+                 ON {_tableName} USING btree
+                 (friendly_name COLLATE pg_catalog."default" ASC NULLS LAST)
+                 TABLESPACE pg_default;
+                 """,
+                transaction: transaction);
+        }
+
         transaction.Commit();
     }
+
+    /// <summary>
+    /// Returns the name of the friendly-name unique index, the longest name derived from the schema and table names.
+    /// </summary>
+    internal static string GetIndexName(string schemaName, string tableName) =>
+        $"ix_{schemaName}_{tableName}_friendly_name";
 
     private static string QuoteIdentifier(string name) => $"\"{name.Replace("\"", "\"\"")}\"";
 }

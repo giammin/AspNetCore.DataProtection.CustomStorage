@@ -206,6 +206,36 @@ public class PostgreSqlDataProtectionRepositoryTests
     }
 
     [Fact]
+    public void InitializeDb_ExistingTableAndRoleWithoutCreatePrivilege_Succeeds()
+    {
+        // Since PostgreSQL 15 the PUBLIC role has no CREATE privilege on the public schema,
+        // so the role can only use the table it has been granted.
+        var tableName = PostgreSqlContainerFixture.NewTableName();
+        CreateSut(Constants.DefaultSchema, tableName).InitializeDb();
+        var roleName = $"role_{tableName}";
+        using (var connection = _fixture.NpgsqlDataSource.OpenConnection())
+        {
+            connection.Execute(
+                $"""
+                 CREATE ROLE {roleName} LOGIN PASSWORD '{roleName}';
+                 GRANT SELECT, INSERT, DELETE ON {Constants.DefaultSchema}.{tableName} TO {roleName};
+                 """);
+        }
+        var connectionString = new NpgsqlConnectionStringBuilder(_fixture.ConnectionString)
+        {
+            Username = roleName,
+            Password = roleName
+        }.ConnectionString;
+        using var dataSource = NpgsqlDataSource.Create(connectionString);
+        var sut = CreateSut(Constants.DefaultSchema, tableName, dataSource);
+
+        sut.Invoking(x => x.InitializeDb()).Should().NotThrow();
+        sut.Insert(new DataProtectionKey { FriendlyName = "RestrictedRoleKey", Xml = "Xml" });
+
+        CountRows(Constants.DefaultSchema, tableName).Should().Be(1);
+    }
+
+    [Fact]
     public void Delete_NullKeys_ThrowsArgumentNullException()
     {
         _sut.Invoking(x => x.Delete(null!))
@@ -279,11 +309,12 @@ public class PostgreSqlDataProtectionRepositoryTests
         sut.GetAll().Select(x => x.FriendlyName).Should().BeEquivalentTo("DeleteFirst", "DeleteFails");
     }
 
-    private PostgreSQLDataProtectionRepository CreateSut(string schemaName, string tableName)
+    private PostgreSQLDataProtectionRepository CreateSut(string schemaName, string tableName,
+        NpgsqlDataSource? dataSource = null)
     {
         var options = Substitute.For<IOptionsSnapshot<DapperDataProtectionConfig>>();
         options.Value.Returns(new DapperDataProtectionConfig { SchemaName = schemaName, TableName = tableName });
-        return new PostgreSQLDataProtectionRepository(_fixture.NpgsqlDataSource, options);
+        return new PostgreSQLDataProtectionRepository(dataSource ?? _fixture.NpgsqlDataSource, options);
     }
 
     private long CountRows(string schemaName, string tableName)

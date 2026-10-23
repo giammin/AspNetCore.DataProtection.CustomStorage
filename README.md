@@ -146,8 +146,9 @@ builder.Services.AddDataProtection()
 `UseDapperDataProtection()` is an extension on `IServiceProvider`. Call it once at startup
 (`app.Services.UseDapperDataProtection()`): it validates the service registrations and, when
 `InitializeTable` is `true`, creates the schema, the table and the friendly-name unique index if
-they are missing. The schema is created only when it does not exist, so the database user needs the
-permission to create schemas only in that case. The index is also created on an existing table that lacks it; if that table already
+they are missing. Each object is created only when it does not exist, so the database user needs the
+permission to create it only in that case: once the schema, the table and the index exist, a user
+that can only read, insert and delete rows of the table is enough. The index is also created on an existing table that lacks it; if that table already
 contains duplicate non-null friendly names, initialization fails and the duplicates must be
 removed before retrying. Initialization is safe when several instances start at the same time:
 it runs in a transaction that holds a database-wide lock (`sp_getapplock` on SQL Server,
@@ -164,7 +165,7 @@ the option and the rule:
 | | SQL Server | PostgreSQL |
 |---|---|---|
 | Allowed characters | letters, digits and `_`; must not start with a digit | lowercase letters, digits and `_`; must not start with a digit |
-| Maximum length | 128 for the schema, 112 for the table (room for the `IX_{TableName}_FriendlyName` index name) | 63 |
+| Maximum length | 128 for the schema, 112 for the table (room for the `IX_{TableName}_FriendlyName` index name) | 45 for the schema and the table together (room for the `ix_{SchemaName}_{TableName}_friendly_name` index name within the 63-character identifier limit) |
 
 The names are always quoted in the generated SQL, so reserved words such as `order` or `user` are
 allowed.
@@ -389,6 +390,12 @@ with an `OptionsValidationException`. The rules are listed in
 - **PostgreSQL:** names must be lowercase. v1 did not quote the names, so PostgreSQL folded them to
   lowercase: a table configured as `DpKeys` was created as `dpkeys`. Replace the configured name
   with its lowercase form; the database does not need to change.
+- **PostgreSQL:** the schema and table names together must be at most 45 characters long. v1
+  accepted longer names, but PostgreSQL silently truncated the derived index name to 63
+  characters, so two tables could end up with the same index name. Rename the table
+  (`ALTER TABLE ... RENAME TO ...`) and its index to `ix_{SchemaName}_{TableName}_friendly_name`
+  (`ALTER INDEX ... RENAME TO ...`), then update the configuration. If the index is not renamed,
+  `InitializeDb()` creates a second unique index with the new name.
 
 #### The PostgreSQL provider no longer enables Dapper's underscore mapping
 
@@ -461,6 +468,9 @@ These need no code change, but can affect a running application:
 - **Missing schema created.** When `InitializeTable` is `true`, `InitializeDb()` creates a missing
   schema instead of failing. The database user needs the permission to create schemas only in
   that case.
+- **PostgreSQL initialization with a restricted user.** `InitializeDb()` creates the table and the
+  index only when they are missing. In v1, `CREATE TABLE IF NOT EXISTS` failed on every start for a
+  user without the `CREATE` privilege on the schema, even when the table existed.
 - **Blank friendly names stored as `NULL`.** An empty or whitespace-only friendly name is passed to
   `Insert` as `null`; v1 passed an empty string. Custom storages must accept `null`.
 - **Malformed keys skipped.** A stored key whose XML is malformed is logged
