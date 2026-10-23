@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer;
@@ -30,7 +31,8 @@ public class SQLServerDataProtectionRepository : IDbDataProtectionStorage
     /// </summary>
     /// <param name="connectionFactory"></param>
     /// <param name="options">repository configuration</param>
-    public SQLServerDataProtectionRepository(SqlConnectionFactory connectionFactory,
+    public SQLServerDataProtectionRepository(
+        [FromKeyedServices(Constants.ConnectionFactoryServiceKey)] SqlConnectionFactory connectionFactory,
         IOptionsSnapshot<DapperDataProtectionConfig> options)
     {
         _connectionFactory = connectionFactory;

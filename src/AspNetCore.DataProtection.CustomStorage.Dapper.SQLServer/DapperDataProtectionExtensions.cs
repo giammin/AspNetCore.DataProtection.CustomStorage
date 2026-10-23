@@ -41,7 +41,9 @@ public static class DapperDataProtectionExtensions
         builder.Services.TryAddEnumerable(ServiceDescriptor
             .Singleton<IValidateOptions<DapperDataProtectionConfig>, DapperDataProtectionConfigValidator>());
 
-        builder.Services.AddSingleton(_=>new SqlConnectionFactory(connectionString));
+        // Keyed, so that a connection factory registered by the application is neither replaced nor used.
+        builder.Services.AddKeyedSingleton(Constants.ConnectionFactoryServiceKey,
+            (_, _) => new SqlConnectionFactory(connectionString));
         builder.Services.AddScoped<IDbDataProtectionStorage, SQLServerDataProtectionRepository>();
         builder.PersistKeysToStorage<IDbDataProtectionStorage>();
         return builder;
