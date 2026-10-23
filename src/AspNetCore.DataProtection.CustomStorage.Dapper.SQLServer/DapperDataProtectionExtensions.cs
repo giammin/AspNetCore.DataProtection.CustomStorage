@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -18,11 +19,19 @@ public static class DapperDataProtectionExtensions
     /// <param name="connectionString"></param>
     /// <param name="configAction"></param>
     /// <returns>The value <paramref name="builder"/>.</returns>
+    /// <exception cref="InvalidOperationException">an <see cref="IDbDataProtectionStorage"/> is already registered</exception>
     public static IDataProtectionBuilder PersistKeysWithDapperInSqlServer(this IDataProtectionBuilder builder,
         string connectionString,
         Action<DapperDataProtectionConfig>? configAction = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+        // A second registration would silently replace the first one and share its options.
+        if (builder.Services.Any(d => d.ServiceType == typeof(IDbDataProtectionStorage)))
+        {
+            throw new InvalidOperationException(
+                $"An {nameof(IDbDataProtectionStorage)} is already registered: call {nameof(PersistKeysWithDapperInSqlServer)} " +
+                "or PersistKeysWithDapperInPostgreSQL only once.");
+        }
 
         var config = new DapperDataProtectionConfig
         {
