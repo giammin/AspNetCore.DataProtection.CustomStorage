@@ -350,7 +350,7 @@ Protection key repository. The adapter maps the framework's XML-element calls to
 service provider for every operation. When `TStorage` implements `IDeletableDataProtectionStorage`,
 the adapter also implements the framework's `IDeletableXmlRepository` and maps deletions to `Delete()`.
 
-When the key ring is loaded, a stored key whose XML is malformed is skipped and logged as an error
+When the key ring is loaded, a stored key whose XML is malformed or missing is skipped and logged as an error
 (event `SkippingMalformedKey`, with the friendly name and the parse position; the XML itself is never
 logged). The remaining keys stay usable, but data protected with the skipped key can no longer be
 unprotected, and if no valid key remains, Data Protection generates a new one.
@@ -495,7 +495,7 @@ These need no code change, but can affect a running application:
   user without the `CREATE` privilege on the schema, even when the table existed.
 - **Blank friendly names stored as `NULL`.** An empty or whitespace-only friendly name is passed to
   `Insert` as `null`; v1 passed an empty string. Custom storages must accept `null`.
-- **Malformed keys skipped.** A stored key whose XML is malformed is logged
+- **Malformed keys skipped.** A stored key whose XML is malformed or `null` is logged
   (`SkippingMalformedKey`) and skipped; in v1 it made loading the whole key ring fail.
 - **No key XML in `KeyInsertException`.** The exception message names the key by friendly name
   only; the storage exception is the `InnerException`.

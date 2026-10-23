@@ -67,7 +67,8 @@ internal class StorageWrapper<TStorage> : IXmlRepository where TStorage : IDataP
         _logger.ReadingXmlFromKey(key.FriendlyName);
         try
         {
-            return XElement.Parse(key.Xml);
+            // Xml is required but not enforced at runtime: a missing value is handled as an empty, malformed document.
+            return XElement.Parse(key.Xml ?? string.Empty);
         }
         catch (XmlException e)
         {

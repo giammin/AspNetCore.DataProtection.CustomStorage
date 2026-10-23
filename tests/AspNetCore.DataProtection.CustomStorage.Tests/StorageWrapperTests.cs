@@ -189,6 +189,22 @@ public class StorageWrapperTests
     }
 
     [Fact]
+    public void GetAllElements_RowWithNullXml_SkipsRowAndLogsError()
+    {
+        _storage.GetAll().Returns([
+            new DataProtectionKey { FriendlyName = MalformedFriendlyName, Xml = null! },
+            new DataProtectionKey { FriendlyName = KeyFriendlyName, Xml = KeyElement.ToString() }
+        ]);
+
+        var elements = _sut.GetAllElements();
+
+        elements.Should().ContainSingle()
+            .Which.ToString().Should().Be(KeyElement.ToString());
+        _loggerFactory.Entries.Should().ContainSingle(e => e.Level == LogLevel.Error)
+            .Which.Should().Match<LogEntry>(e => e.EventId.Name == "SkippingMalformedKey" && e.Contains(MalformedFriendlyName));
+    }
+
+    [Fact]
     public void GetAllElements_EmptyStorage_ReturnsEmpty()
     {
         _storage.GetAll().Returns([]);
