@@ -103,7 +103,7 @@ public class DeletableStorageWrapperTests
     {
         _sut.DeleteElements(elements => elements.First().DeletionOrder = 1);
 
-        _loggerFactory.Entries.Should().ContainSingle(e => e.EventId.Name == "DeletingKeyFromStorage")
+        _loggerFactory.Entries.Should().ContainSingle(e => e.EventId.Name == "DeletedKeyFromStorage")
             .Which.Contains(_first.FriendlyName!).Should().BeTrue();
         _loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
     }
@@ -119,6 +119,7 @@ public class DeletableStorageWrapperTests
         result.Should().BeFalse();
         _loggerFactory.Entries.Should().ContainSingle(e => e.Level == LogLevel.Error)
             .Which.Exception.Should().BeSameAs(storageException);
+        _loggerFactory.Entries.Should().NotContain(e => e.EventId.Name == "DeletedKeyFromStorage");
         _loggerFactory.Entries.Should().NotContain(e => e.Contains(KeyMaterial));
     }
 
