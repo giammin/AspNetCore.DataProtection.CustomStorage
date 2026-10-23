@@ -101,6 +101,10 @@ app.Services.UseDapperDataProtection();
 app.Run();
 ```
 
+The provider registers its `SqlConnectionFactory` as a keyed service. A `SqlConnectionFactory`
+registered by the application is neither replaced nor used for the keys, whatever the registration
+order.
+
 ### PostgreSQL
 
 ```csharp
@@ -428,6 +432,24 @@ v1 registered its `NpgsqlDataSource` as an unkeyed singleton. v2 registers it as
 
 A malformed connection string now throws when the data source is first resolved, in
 `UseDapperDataProtection()`, instead of in `PersistKeysWithDapperInPostgreSQL()`.
+
+#### The SQL Server provider registers its connection factory as a keyed service
+
+v1 registered its `SqlConnectionFactory` as an unkeyed singleton. v2 registers it as a keyed service
+(see [SQL Server](#sql-server)). This affects:
+
+- Applications that resolve `SqlConnectionFactory` from dependency injection and received the keys
+  connection factory: register your own `SqlConnectionFactory`.
+- Applications that register `SQLServerDataProtectionRepository` themselves instead of calling
+  `PersistKeysWithDapperInSqlServer()`: the constructor now resolves the provider's keyed connection
+  factory. Call `PersistKeysWithDapperInSqlServer()`, or register the repository with a factory
+  that passes the connection factory explicitly:
+
+  ```csharp
+  builder.Services.AddScoped<IDbDataProtectionStorage>(sp => new SQLServerDataProtectionRepository(
+      new SqlConnectionFactory(connectionString),
+      sp.GetRequiredService<IOptionsSnapshot<DapperDataProtectionConfig>>()));
+  ```
 
 #### `StorageWrapper<TStorage>` is internal
 
