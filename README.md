@@ -141,6 +141,9 @@ builder.Services.AddDataProtection()
     });
 ```
 
+Call `PersistKeysWithDapperInSqlServer()` or `PersistKeysWithDapperInPostgreSQL()` only once: a
+second call, to either provider, throws an `InvalidOperationException`.
+
 | Option | Type | Default (SQL Server) | Default (PostgreSQL) | Description |
 |--------|------|----------------------|----------------------|-------------|
 | `SchemaName` | `string` | `dbo` | `public` | Schema that contains the keys table. See [Schema and table names](#schema-and-table-names). |
@@ -450,6 +453,13 @@ v1 registered its `SqlConnectionFactory` as an unkeyed singleton. v2 registers i
       new SqlConnectionFactory(connectionString),
       sp.GetRequiredService<IOptionsSnapshot<DapperDataProtectionConfig>>()));
   ```
+
+#### The Dapper providers can be registered only once
+
+v1 accepted several calls to `PersistKeysWithDapperInSqlServer()` and
+`PersistKeysWithDapperInPostgreSQL()`: the last call silently replaced the storage of the previous
+ones, which shared a single configuration. v2 throws an `InvalidOperationException` when an
+`IDbDataProtectionStorage` is already registered. Keep a single call.
 
 #### `StorageWrapper<TStorage>` is internal
 

@@ -41,6 +41,26 @@ public class SqlServerDapperDataProtectionExtensionsTests
     }
 
     [Fact]
+    public void PersistKeysWithDapperInSqlServer_CalledTwice_ThrowsInvalidOperationException()
+    {
+        var builder = new ServiceCollection().AddDataProtection().PersistKeysWithDapperInSqlServer(ConnectionString);
+
+        builder.Invoking(x => x.PersistKeysWithDapperInSqlServer(ConnectionString))
+            .Should().Throw<InvalidOperationException>()
+            .WithMessage($"*{nameof(IDbDataProtectionStorage)}*");
+    }
+
+    [Fact]
+    public void PersistKeysWithDapperInSqlServer_AfterPostgreSqlProvider_ThrowsInvalidOperationException()
+    {
+        var builder = new ServiceCollection().AddDataProtection();
+        Dapper.PostgreSQL.DapperDataProtectionExtensions.PersistKeysWithDapperInPostgreSQL(builder, "Host=localhost;Database=test");
+
+        builder.Invoking(x => x.PersistKeysWithDapperInSqlServer(ConnectionString))
+            .Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
     public void PersistKeysWithDapperInSqlServer_DefaultConfig_PassesStartupValidation()
     {
         using var provider = BuildServiceProvider(_ => { });
