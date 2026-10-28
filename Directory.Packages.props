@@ -4,7 +4,10 @@
   </PropertyGroup>
   <ItemGroup Label="Source">
     <PackageVersion Include="Microsoft.AspNetCore.DataProtection" Version="10.0.14" />
-    <PackageVersion Include="Dapper" Version="2.1.89" />
+    <!-- Dapper is the minimum version the packages declare to consumers, not the latest available:
+     2.1.86+ breaks PostgreSQL array mapping (DapperLib/Dapper#2231) and consumers must be able to stay below it.
+     Raise it only when a newer API is required. -->
+    <PackageVersion Include="Dapper" Version="2.1.79" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.1.1" />
     <PackageVersion Include="Npgsql" Version="10.0.3" />
   </ItemGroup>
