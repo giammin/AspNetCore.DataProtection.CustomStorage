@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using AspNetCore.DataProtection.CustomStorage.Dapper;
 using AspNetCore.DataProtection.CustomStorage.Dapper.SQLServer;
 using FluentAssertions;
@@ -61,21 +62,23 @@ public class SqlServerDapperDataProtectionExtensionsTests
     }
 
     [Fact]
-    public void PersistKeysWithDapperInSqlServer_DefaultConfig_PassesStartupValidation()
+    public async Task PersistKeysWithDapperInSqlServer_DefaultConfig_PassesStartupValidation()
     {
         using var provider = BuildServiceProvider(_ => { });
 
-        provider.GetRequiredService<IStartupValidator>().Invoking(x => x.Validate())
-            .Should().NotThrow();
+        await provider.GetRequiredService<IAsyncStartupValidator>()
+            .Awaiting(x => x.ValidateAsync(TestContext.Current.CancellationToken))
+            .Should().NotThrowAsync();
     }
 
     [Fact]
-    public void PersistKeysWithDapperInSqlServer_InvalidTableName_FailsStartupValidation()
+    public async Task PersistKeysWithDapperInSqlServer_InvalidTableName_FailsStartupValidation()
     {
         using var provider = BuildServiceProvider(config => config.TableName = "My-Keys");
 
-        provider.GetRequiredService<IStartupValidator>().Invoking(x => x.Validate())
-            .Should().Throw<OptionsValidationException>()
+        (await provider.GetRequiredService<IAsyncStartupValidator>()
+            .Awaiting(x => x.ValidateAsync(TestContext.Current.CancellationToken))
+            .Should().ThrowAsync<OptionsValidationException>())
             .WithMessage($"*{nameof(DapperDataProtectionConfig)}.{nameof(DapperDataProtectionConfig.TableName)}*");
     }
 

@@ -335,7 +335,7 @@ if (keyManager is XmlKeyManager { CanDeleteKeys: true } xmlKeyManager)
 }
 ```
 
-> **Note:** in ASP.NET Core 10.0, `XmlKeyManager` exposes `CanDeleteKeys` and `DeleteKeys` but does
+> **Note:** in ASP.NET Core 10.0 and 11.0, `XmlKeyManager` exposes `CanDeleteKeys` and `DeleteKeys` but does
 > not implement `IDeletableKeyManager`, so a `keyManager is IDeletableKeyManager` check is `false`
 > even when deletion is supported.
 
