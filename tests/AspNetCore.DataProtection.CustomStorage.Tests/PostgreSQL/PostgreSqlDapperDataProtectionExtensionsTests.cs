@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using AspNetCore.DataProtection.CustomStorage.Dapper;
 using AspNetCore.DataProtection.CustomStorage.Dapper.PostgreSQL;
 using Dapper;
@@ -84,21 +85,23 @@ public class PostgreSqlDapperDataProtectionExtensionsTests
     }
 
     [Fact]
-    public void PersistKeysWithDapperInPostgreSQL_DefaultConfig_PassesStartupValidation()
+    public async Task PersistKeysWithDapperInPostgreSQL_DefaultConfig_PassesStartupValidation()
     {
         using var provider = BuildServiceProvider(_ => { });
 
-        provider.GetRequiredService<IStartupValidator>().Invoking(x => x.Validate())
-            .Should().NotThrow();
+        await provider.GetRequiredService<IAsyncStartupValidator>()
+            .Awaiting(x => x.ValidateAsync(TestContext.Current.CancellationToken))
+            .Should().NotThrowAsync();
     }
 
     [Fact]
-    public void PersistKeysWithDapperInPostgreSQL_MixedCaseTableName_FailsStartupValidation()
+    public async Task PersistKeysWithDapperInPostgreSQL_MixedCaseTableName_FailsStartupValidation()
     {
         using var provider = BuildServiceProvider(config => config.TableName = "DataProtectionKeys");
 
-        provider.GetRequiredService<IStartupValidator>().Invoking(x => x.Validate())
-            .Should().Throw<OptionsValidationException>()
+        (await provider.GetRequiredService<IAsyncStartupValidator>()
+            .Awaiting(x => x.ValidateAsync(TestContext.Current.CancellationToken))
+            .Should().ThrowAsync<OptionsValidationException>())
             .WithMessage($"*{nameof(DapperDataProtectionConfig)}.{nameof(DapperDataProtectionConfig.TableName)}*");
     }
 
